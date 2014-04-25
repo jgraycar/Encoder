@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.FileWriter;
 import java.io.File;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.Iterator;
@@ -19,17 +20,21 @@ import static enc.Reverse.*;
 
 public class Encoder {
 
-    public static void main(String... args) {
+    public Encoder() {
         generateLists();
+    }
+
+    public static void main(String... args) {
+        Encoder enc = new Encoder();
         if (args.length == 0) {
             System.out.println("Error: Encoder requires at least 1 argument.");
             System.exit(1);
         }
-        interactive = false;
-        parseArgs(args);
+        enc.interactive = false;
+        enc.parseArgs(args);
     }
 
-    private static int parseArgs(String[] args) {
+    protected int parseArgs(String[] args) {
         boolean name = false;
         String nameFile = "";
         boolean encrypt = true;
@@ -56,7 +61,10 @@ public class Encoder {
                 decrypt = false;
                 break;
             case "-l":
-                listCurrFiles();
+                String[] files = listCurrFiles();
+                for (String fl : files) {
+                    System.out.println(fl);
+                }
                 break;
             case "-n":
                 name = true;
@@ -98,12 +106,17 @@ public class Encoder {
                                               " reading file %s.\n", arg);
                             System.exit(1);
                         }
+                        text.close();
                         int k = 0;
                         while (k < reps) {
                             if (encrypt) {
                                 filetext = encode(filetext);
                             } else if (decrypt) {
-                                filetext = decode(filetext);
+                                try {
+                                    filetext = decode(filetext);
+                                } catch (NumberFormatException err) {
+                                    return 3;
+                                }
                             }
                             k += 1;
                         }
@@ -141,9 +154,11 @@ public class Encoder {
                         file.write(filetext);
                         file.close();
                     } catch (NullPointerException nullp) {
-                        System.out.printf("File %s not found.\n", arg);
+                        System.out.printf("NullPointerException: File %s not found.\n", arg);
+                        return 1;
                     } catch (IOException io) {
-                        System.out.printf("File %s not found.\n", arg);
+                        System.out.printf("IOException: File %s not found.\n", arg);
+                        return 2;
                     }
                     if (prnt) {
                         System.out.print(filetext);
@@ -158,7 +173,7 @@ public class Encoder {
         return ret;
     }
 
-    private static String encode(String text) {
+    protected String encode(String text) {
         Random rando = new Random();
         text = reverseText(text);
         char[] chArr = text.toCharArray();
@@ -183,7 +198,7 @@ public class Encoder {
         return h;
     }
 
-    private static BufferedReader getAFile(String filename) {
+    protected static BufferedReader getAFile(String filename) {
         InputStream resource =
             enc.Encoder.class.getClassLoader().getResourceAsStream(filename);
         BufferedReader str =
@@ -191,7 +206,7 @@ public class Encoder {
         return str;
     }
 
-    private static void generateLists() {
+    private void generateLists() {
         LinkedList<Integer> primes = new LinkedList<Integer>();
         primes.add(17659);
         primes.add(13681);
@@ -245,27 +260,22 @@ public class Encoder {
         }
     }
 
-    private static String decode(String encoded) {
+    private String decode(String encoded) throws NumberFormatException {
         String[] parts = encoded.split("\\p{Space}+");
         int mod = 0;
         StringBuilder decoded = new StringBuilder();
-        try {
-            for (int i = 0; i < parts.length; i += 2) {
-                mod = Integer.parseInt(parts[i]);
-                mod = (mod * (largePrime - 1)) % largePrime;
-                int x = Integer.parseInt(parts[i + 1]);
-                x = (x * (mod - 1)) % mod;
-                char[] ch = Character.toChars(x);
-                decoded.append(ch[0]);
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Error: file not formatted correctly.");
-            System.exit(1);
+        for (int i = 0; i < parts.length; i += 2) {
+            mod = Integer.parseInt(parts[i]);
+            mod = (mod * (largePrime - 1)) % largePrime;
+            int x = Integer.parseInt(parts[i + 1]);
+            x = (x * (mod - 1)) % mod;
+            char[] ch = Character.toChars(x);
+            decoded.append(ch[0]);
         }
         return reverseText(decoded.toString());
     }
 
-    private static void interactiveMode() {
+    private void interactiveMode() {
         if (interactive) {
             System.out.println("Already running interactive mode.");
         } else {
@@ -288,21 +298,19 @@ public class Encoder {
         }
     }
 
-    private static void listCurrFiles() {
+    protected static String[] listCurrFiles() {
         File file = new File(System.getProperty("user.dir"));
         String[] files = file.list();
-        if (files.length > 0) {
-            for (String s : files) {
-                System.out.println(s);
-            }
-        } else {
-            System.out.println("No files in current directory.");
+        if (files.length == 0) {
+            files = new String[1];
+            files[0] = "No files found in current directory.";
         }
+        return files;
     }
 
-    private static String[] _puncts;
-    private static int[] _primes;
+    private String[] _puncts;
+    private int[] _primes;
     private static int largePrime = 37633;
-    private static boolean interactive;
+    private boolean interactive;
 
 }
