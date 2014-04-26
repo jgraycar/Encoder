@@ -44,7 +44,7 @@ public class EncoderGUI {
         frame = new JFrame();
         filePanel = new FilePanel();
         fileChooser = new JFileChooser();
-        fileChooser.addActionListener(new FileChooserListener());
+        //fileChooser.addActionListener(new FileChooserListener());
         filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.Y_AXIS));
         frame.getContentPane().add(BorderLayout.CENTER, filePanel);
 
@@ -119,20 +119,18 @@ public class EncoderGUI {
     private void doAction() {
         StringBuilder newText = new StringBuilder();
         StringBuilder tail = new StringBuilder();
-        //tail.append(" successfully encrypted!");
         if (state == 1) {
-            //tail.replace(0, tail.length(), " successfully decrypted!");
-            tail.append(" successfully decrypted!");
+            tail.append("\" successfully decrypted!");
         } else {
-            tail.append(" successfully encrypted!");
+            tail.append("\" successfully encrypted!");
         }
         int status = transformText();
         if (status == 1) {
-            popup("Error: file " + currFile + " is not encrypted.");
+            popup("Error: file \"" + currFile + "\" is not encrypted.");
         } else if (status == 2) {
             popup("Error: encountered IOException.");
         } else if (status == 0) {
-            popup(fileChooser.getName(currFile) + tail.toString());
+            popup("\"" + fileChooser.getName(currFile) + tail.toString());
         }
     }
 
@@ -152,7 +150,7 @@ public class EncoderGUI {
                 popup("Error while retrieving file text.");
             }
         } catch (FileNotFoundException f) {
-            popup("Error: file " + currFile + " not found.\n");
+            popup("Error: file \"" + currFile + "\" not found.\n");
         }
     }
 
@@ -185,27 +183,6 @@ public class EncoderGUI {
             int result = fileChooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
                 fileChosen();
-            }
-        }
-    }
-
-    class FileChooserListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            currFile = fileChooser.getSelectedFile();
-            try {
-                BufferedReader file = new BufferedReader(new FileReader(currFile));
-                StringBuilder text = new StringBuilder();
-                try {
-                    for (String line = file.readLine(); line != null; line = file.readLine()) {
-                        text.append(line + "\n");
-                    }
-                    file.close();
-                    setFileText(text);
-                } catch (IOException io) {
-                    popup("Error while retrieving file text.");
-                }
-            } catch (FileNotFoundException f) {
-                popup("Error: file " + currFile + " not found.\n");
             }
         }
     }

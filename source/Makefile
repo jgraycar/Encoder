@@ -1,9 +1,11 @@
 SHELL = bash
 
-SRC = $(wildcard *.java)
+PACKAGE = enc
+
+SRC = $(wildcard $(PACKAGE)/*.java)
 
 default: $(SRC)
-	javac -g $(SRC)
+	javac -d ../classes -g $(SRC)
 
 clean:
 	$(RM) *.class *~ OUT
