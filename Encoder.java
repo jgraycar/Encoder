@@ -201,19 +201,10 @@ public class Encoder {
     }
 
     protected static BufferedReader getAFile(String filename) {
-        BufferedReader str;
-        try {
-            str = new BufferedReader(new FileReader(filename));
-            return str;
-        } catch (FileNotFoundException f) {
-            System.err.printf("Error: file %s not found.\n", filename);
-        }
-        /**
         InputStream resource =
             enc.Encoder.class.getClassLoader().getResourceAsStream(filename);
         BufferedReader str =
             new BufferedReader(new InputStreamReader(resource));
-        */
         return null;
     }
 
@@ -271,7 +262,7 @@ public class Encoder {
         }
     }
 
-    private String decode(String encoded) throws NumberFormatException {
+    protected String decode(String encoded) throws NumberFormatException {
         String[] parts = encoded.split("\\p{Space}+");
         int mod = 0;
         StringBuilder decoded = new StringBuilder();
