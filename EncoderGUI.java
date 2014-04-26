@@ -17,6 +17,7 @@ public class EncoderGUI {
 
     JFrame frame, nameInquiry;
     Encoder enc;
+    JScrollPane fileScroller;
     FileMenuPanel fileMenu;
     FilePanel filePanel;
     String[] files;
@@ -72,6 +73,7 @@ public class EncoderGUI {
 
     public void displayFiles() {
         fileMenu = new FileMenuPanel();
+        fileMenu.setVisible(true);
         fileMenu.setLayout(new BoxLayout(fileMenu, BoxLayout.Y_AXIS));
         String[] files = Encoder.listCurrFiles();
         for (String file : files) {
@@ -79,8 +81,10 @@ public class EncoderGUI {
             button.addActionListener(new FileButtonListener());
             fileMenu.add(button);
         }
-        JScrollPane scroller = new JScrollPane(fileMenu);
-        frame.getContentPane().add(BorderLayout.WEST, scroller);
+        fileScroller = new JScrollPane(fileMenu);
+        fileScroller.setVisible(true);
+        frame.getContentPane().add(BorderLayout.WEST, fileScroller);
+        frame.revalidate();
     }
 
     private void setFileText(StringBuilder text) {
@@ -138,8 +142,7 @@ public class EncoderGUI {
             popup("Error: file is not encrypted.");
         } else if (status == 0) {
             popup(currFile + tail.toString());
-            fileMenu.setVisible(false);
-            frame.remove(fileMenu);
+            frame.remove(fileScroller);
             displayFiles();
         }
     }
