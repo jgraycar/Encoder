@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -199,11 +201,20 @@ public class Encoder {
     }
 
     protected static BufferedReader getAFile(String filename) {
+        BufferedReader str;
+        try {
+            str = new BufferedReader(new FileReader(filename));
+            return str;
+        } catch (FileNotFoundException f) {
+            System.err.printf("Error: file %s not found.\n", filename);
+        }
+        /**
         InputStream resource =
             enc.Encoder.class.getClassLoader().getResourceAsStream(filename);
         BufferedReader str =
             new BufferedReader(new InputStreamReader(resource));
-        return str;
+        */
+        return null;
     }
 
     private void generateLists() {
