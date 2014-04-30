@@ -19,17 +19,17 @@ import java.io.FileNotFoundException;
 
 public class EncoderGUI {
 
-    JFrame frame, nameInquiry;
+    JFrame frame, pop;
     JFileChooser fileChooser;
     Encoder enc;
     FilePanel filePanel;
     String[] files;
     StringBuilder text;
-    File currFile;
+    File currFile, saveFile;
     String fileName;
     JTextArea fileText;
     ButtonsPanel buttons;
-    JButton encButt, decButt, openButt;
+    JButton encButt, decButt, openButt, closeButt;
     boolean nameSet;
     // state: 0 is encrypt, 1 decrypt
     int state;
@@ -44,7 +44,6 @@ public class EncoderGUI {
         frame = new JFrame();
         filePanel = new FilePanel();
         fileChooser = new JFileChooser();
-        //fileChooser.addActionListener(new FileChooserListener());
         filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.Y_AXIS));
         frame.getContentPane().add(BorderLayout.CENTER, filePanel);
 
@@ -81,39 +80,31 @@ public class EncoderGUI {
         frame.setVisible(true);
     }
 
-    private void setFileText(StringBuilder textBuilder) {
-        fileText.setText(textBuilder.toString());
-        text = textBuilder;
-    }
-
     private void popup(String msg) {
-        JFrame pop = new JFrame();
+        pop = new JFrame();
         JPanel popPanel = new JPanel();
-        JLabel msgLabel = new JLabel(msg);
+        JLabel msgLabel = new JLabel(msg + "   ");
+        closeButt = new JButton("Ok");
+        closeButt.addActionListener(new CloseButtonListener());
         msgLabel.setFont(new Font("serif", Font.BOLD, 20));
         popPanel.setLayout(new BoxLayout(popPanel, BoxLayout.X_AXIS));
         popPanel.add(Box.createHorizontalGlue());
         popPanel.add(msgLabel);
+        popPanel.add(closeButt);
         popPanel.add(Box.createHorizontalGlue());
         pop.getContentPane().add(BorderLayout.CENTER, popPanel);
-        pop.setSize(400, 200);
+        pop.setSize(msg.length() * 10 + 75, 200);
         pop.setLocationRelativeTo(null);
         pop.setVisible(true);
+        pop.getRootPane().setDefaultButton(closeButt);
     }
 
     private void queryName() {
-        nameInquiry = new JFrame();
-        JLabel question = new JLabel("Save as: ");
-        JPanel queryPanel = new JPanel();
-        queryPanel.add(question);
-        JTextField response = new JTextField(20);
-        response.addActionListener(new NamePromptListener());
-        queryPanel.add(response);
-        response.requestFocus();
-        nameInquiry.add(queryPanel);
-        nameInquiry.setSize(300, 100);
-        nameInquiry.setLocationRelativeTo(null);
-        nameInquiry.setVisible(true);
+        int result = fileChooser.showSaveDialog(null);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            saveFile = fileChooser.getSelectedFile();
+            doAction();
+        }
     }
 
     private void doAction() {
@@ -127,25 +118,41 @@ public class EncoderGUI {
         int status = transformText();
         if (status == 1) {
             popup("Error: file \"" + currFile + "\" is not encrypted.");
+            restoreText();
         } else if (status == 2) {
             popup("Error: encountered IOException.");
         } else if (status == 0) {
             popup("\"" + fileChooser.getName(currFile) + tail.toString());
+            currFile = saveFile;
+            fileChosen();
+        }
+    }
+
+    private void restoreText() {
+        try {
+            FileWriter fileW = new FileWriter(currFile);
+            fileW.write(text.toString());
+            fileW.close();
+            boolean deleted = saveFile.delete();
+            if (!deleted) {
+                popup("Error: corrupted file could not be deleted.");
+            }
+        } catch (IOException io) {
+            popup("Error: could not restore text.");
         }
     }
 
     private void fileChosen() {
-        currFile = fileChooser.getSelectedFile();
         try {
             BufferedReader file =
                 new BufferedReader(new FileReader(currFile));
-            StringBuilder textBuilder = new StringBuilder();
+            text = new StringBuilder();
             try {
                 for (String line = file.readLine(); line != null; line = file.readLine()) {
-                    textBuilder.append(line + "\n");
+                    text.append(line + "\n");
                 }
                 file.close();
-                setFileText(textBuilder);
+                fileText.setText(text.toString());
             } catch (IOException io) {
                 popup("Error while retrieving file text.");
             }
@@ -167,7 +174,7 @@ public class EncoderGUI {
             transformed = enc.encode(text.toString());
         }
         try {
-            FileWriter fileW = new FileWriter(new File(currFile.getParent(), fileName));
+            FileWriter fileW = new FileWriter(saveFile);
             fileW.write(transformed);
             fileW.close();
         } catch (IOException io) {
@@ -178,10 +185,17 @@ public class EncoderGUI {
 
     // ---------------------------- Listeners -----------------------------
 
+    class CloseButtonListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            pop.dispatchEvent(new WindowEvent(pop, WindowEvent.WINDOW_CLOSING));
+        }
+    }
+
     class OpenButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             int result = fileChooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
+                currFile = fileChooser.getSelectedFile();
                 fileChosen();
             }
         }
@@ -198,16 +212,6 @@ public class EncoderGUI {
         public void actionPerformed(ActionEvent event) {
             state = 1;
             queryName();
-        }
-    }
-
-    class NamePromptListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            JTextField label = (JTextField) event.getSource();
-            fileName = label.getText();
-            nameSet = true;
-            doAction();
-            nameInquiry.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
         }
     }
 
