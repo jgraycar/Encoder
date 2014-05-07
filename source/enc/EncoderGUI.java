@@ -20,7 +20,8 @@ import java.io.FileNotFoundException;
 public class EncoderGUI {
 
     JFrame frame, pop;
-    JFileChooser fileChooser;
+    FileDialog fileChooser;
+    JFileChooser jFile;
     Encoder enc;
     FilePanel filePanel;
     String[] files;
@@ -43,7 +44,8 @@ public class EncoderGUI {
     public void go() {
         frame = new JFrame();
         filePanel = new FilePanel();
-        fileChooser = new JFileChooser();
+        fileChooser = new FileDialog(frame);
+        jFile = new JFileChooser();
         filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.Y_AXIS));
         frame.getContentPane().add(BorderLayout.CENTER, filePanel);
 
@@ -100,9 +102,18 @@ public class EncoderGUI {
     }
 
     private void queryName() {
+        fileChooser.setMode(FileDialog.SAVE);
+        /**
         int result = fileChooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
             saveFile = fileChooser.getSelectedFile();
+            doAction();
+        }
+        */
+        fileChooser.setVisible(true);
+        File[] files = fileChooser.getFiles();
+        if (files.length > 0) {
+            saveFile = files[0];
             doAction();
         }
     }
@@ -122,7 +133,7 @@ public class EncoderGUI {
         } else if (status == 2) {
             popup("Error: encountered IOException.");
         } else if (status == 0) {
-            popup("\"" + fileChooser.getName(currFile) + tail.toString());
+            popup("\"" + jFile.getName(currFile) + tail.toString());
             currFile = saveFile;
             fileChosen();
         }
@@ -193,9 +204,18 @@ public class EncoderGUI {
 
     class OpenButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
+            /**
             int result = fileChooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
                 currFile = fileChooser.getSelectedFile();
+                fileChosen();
+            }
+            */
+            fileChooser.setMode(FileDialog.LOAD);
+            fileChooser.setVisible(true);
+            File[] files = fileChooser.getFiles();
+            if (files.length > 0) {
+                currFile = files[0];
                 fileChosen();
             }
         }
