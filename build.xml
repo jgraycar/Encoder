@@ -1,0 +1,64 @@
+<project name="Encoder" default = "jar" basedir=".">
+  <description>
+    first build file
+  </description>
+  <property name="src" location="src"/>
+  <property name="build" location="build"/>
+  <property name="dist" location="dist"/>
+  <property name="Main-Class" value="enc.EncoderGUI"/>
+  <property environment="env"/>
+
+  <presetdef name="javac">
+    <javac includeantruntime="false" />
+  </presetdef>
+
+  <target name="init">
+    <!-- Create time stamp -->
+    <tstamp/>
+    <!-- Create build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile" depends="init"
+          description="compile source" >
+    <!-- Compile java code from ${src} into ${build} -->
+    <javac srcdir="${src}" destdir="${build}"/>
+  </target>
+
+  <target name="jar" depends="compile"
+          description="generate the distribution jar file" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+
+    <!-- Put everything in ${build} into the Encoder-${DSTAMP}.jar file -->
+    <jar jarfile="${dist}/lib/Encoder-${DSTAMP}.jar" basedir="${build}">
+      <manifest>
+        <attribute name="Main-Class" value="${Main-Class}"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="clean"
+          description="clean up">
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+  </target>
+
+  <taskdef name="bundleapp"
+             classname="com.oracle.appbundler.AppBundlerTask"   
+             classpath="lib/appbundler-1.0.jar" />
+
+  <target name="bundle-Encoder">
+      <bundleapp outputdirectory="dist"
+            name="EncoderGUI"
+            displayname="Encoder GUI"
+            identifier="enc.EncoderGUI"
+            mainclassname="enc.EncoderGUI"
+            icon="src/encoder.icns">
+            <runtime dir="${env.JAVA_HOME}"/>
+            <classpath file="dist/lib/EncoderGUI.jar" />
+      </bundleapp>
+  </target>
+
+</project>
