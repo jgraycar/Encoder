@@ -1,11 +1,12 @@
 
-Compile and create jar/app using "ant" command
+Compile and create jar/app/dmg using "ant" command
 
 Commands:
 -    "ant jar" or just "ant" will create jar file in "dist/lib/Encoder-${DSTAMP}.jar" and
-     "dist/lib/EncoderGUI.jar"
+     "dist/lib/Encoder.jar"
 -    "ant compile" will create build directory and store *.classes there.
 -    "ant init" will simply create empty build directory.
 -    "ant clean" will delete build and dist directories.
--    "ant bundle-app" will create the EncoderGUI.app file.
+-    "ant bundle-app" will create the Encoder.app file.
+-    "ant dmg" will create the ENCODER disk image file.
 

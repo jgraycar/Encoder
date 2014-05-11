@@ -1,4 +1,4 @@
-<project name="Encoder" default = "jar" basedir=".">
+<project name="Encoder" default = "bundle-app" basedir=".">
   <description>
     Build file for EncoderGUI
   </description>
@@ -6,11 +6,8 @@
   <property name="build" location="build"/>
   <property name="dist" location="dist"/>
   <property name="Main-Class" value="enc.EncoderGUI"/>
+  <property name="volname" value="Encoder"/>
   <property environment="env"/>
-
-  <presetdef name="javac">
-    <javac includeantruntime="false" />
-  </presetdef>
 
   <target name="init">
     <!-- Create time stamp -->
@@ -22,7 +19,7 @@
   <target name="compile" depends="init"
           description="compile source" >
     <!-- Compile java code from ${src} into ${build} -->
-    <javac srcdir="${src}" destdir="${build}"/>
+    <javac includeantruntime="false" srcdir="${src}" destdir="${build}"/>
   </target>
 
   <target name="jar" depends="compile"
@@ -31,13 +28,13 @@
     <mkdir dir="${dist}/lib"/>
 
     <!-- Put everything in ${build} into Encoder-${DSTAMP}.jar file -->
-    <jar jarfile="${dist}/lib/Encoder-${DSTAMP}.jar" basedir="${build}">
+    <jar jarfile="${dist}/lib/${volname}-${DSTAMP}.jar" basedir="${build}">
       <manifest>
         <attribute name="Main-Class" value="${Main-Class}"/>
       </manifest>
     </jar>
-    <!-- Put everything in ${build} into EncoderGUI.jar file -->
-    <jar jarfile="${dist}/lib/EncoderGUI.jar" basedir="${build}">
+    <!-- Put everything in ${build} into Encoder.jar file -->
+    <jar jarfile="${dist}/lib/${volname}.jar" basedir="${build}">
       <manifest>
         <attribute name="Main-Class" value="${Main-Class}"/>
       </manifest>
@@ -49,22 +46,38 @@
     <!-- Delete the ${build} and ${dist} directory trees -->
     <delete dir="${build}"/>
     <delete dir="${dist}"/>
+    <delete file="${volname}.dmg"/>
   </target>
 
   <taskdef name="bundleapp"
              classname="com.oracle.appbundler.AppBundlerTask"   
              classpath="lib/appbundler-1.0.jar" />
 
-  <target name="bundle-app">
+  <target name="bundle-app" depends="jar">
       <bundleapp outputdirectory="dist"
-            name="EncoderGUI"
-            displayname="Encoder GUI"
+            name="${volname}"
+            displayname="${volname}"
             identifier="enc.EncoderGUI"
             mainclassname="enc.EncoderGUI"
             icon="src/encoder.icns">
             <runtime dir="${env.JAVA_HOME}"/>
-            <classpath file="dist/lib/EncoderGUI.jar" />
+            <classpath file="dist/lib/${volname}.jar" />
       </bundleapp>
+  </target>
+
+  <target name="dmg" depends="bundle-app"
+          description="create disc image file containing app file">
+    <delete file="${volname}.dmg"/>
+    <exec executable="/usr/bin/hdiutil" os="Mac OS X" failonerror="true">
+      <arg value="create"/>
+      <arg value="-srcfolder"/>
+      <arg value="dist/${volname}.app"/>
+      <arg value="-fs"/>
+      <arg value="MS-DOS"/>
+      <arg value="-volname"/>
+      <arg value="${volname}"/>
+      <arg value="./${volname}"/>
+    </exec>
   </target>
 
 </project>
