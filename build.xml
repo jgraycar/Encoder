@@ -1,6 +1,6 @@
 <project name="Encoder" default = "jar" basedir=".">
   <description>
-    first build file
+    Build file for EncoderGUI
   </description>
   <property name="src" location="src"/>
   <property name="build" location="build"/>
@@ -30,8 +30,14 @@
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/lib"/>
 
-    <!-- Put everything in ${build} into the Encoder-${DSTAMP}.jar file -->
+    <!-- Put everything in ${build} into Encoder-${DSTAMP}.jar file -->
     <jar jarfile="${dist}/lib/Encoder-${DSTAMP}.jar" basedir="${build}">
+      <manifest>
+        <attribute name="Main-Class" value="${Main-Class}"/>
+      </manifest>
+    </jar>
+    <!-- Put everything in ${build} into EncoderGUI.jar file -->
+    <jar jarfile="${dist}/lib/EncoderGUI.jar" basedir="${build}">
       <manifest>
         <attribute name="Main-Class" value="${Main-Class}"/>
       </manifest>
@@ -49,7 +55,7 @@
              classname="com.oracle.appbundler.AppBundlerTask"   
              classpath="lib/appbundler-1.0.jar" />
 
-  <target name="bundle-Encoder">
+  <target name="bundle-app">
       <bundleapp outputdirectory="dist"
             name="EncoderGUI"
             displayname="Encoder GUI"

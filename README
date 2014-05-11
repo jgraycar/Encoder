@@ -5,7 +5,7 @@ Commands:
 -    "ant compile" will create build directory and store *.classes there.
 -    "ant init" will simply create empty build directory.
 -    "ant clean" will delete build and dist directories.
--    "ant bundle-Encoder" will create the EncoderGUI.app file. You will need to
+-    "ant bundle-app" will create the EncoderGUI.app file. You will need to
      first move the most recent Encoder-${DSTAMP}.jar file to EncoderGUI.jar for
      it to work.
 
