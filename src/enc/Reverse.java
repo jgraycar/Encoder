@@ -72,6 +72,14 @@ public class Reverse {
         return revText;
     }
 
+    public static int[] reverseInts(int[] intArr) {
+        int[] newArr = new int[intArr.length];
+        for (int i = 0; i < intArr.length; i += 1) {
+            newArr[intArr.length - i - 1] = intArr[i];
+        }
+        return newArr;
+    }
+
     /** enter interactive mode. */
     private static void interMode() {
         System.out.println("Entering interactive mode");
