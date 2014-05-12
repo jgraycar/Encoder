@@ -6,10 +6,14 @@ import java.awt.event.*;
 
 import java.lang.StringBuilder;
 
+import java.util.ArrayList;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
@@ -34,6 +38,8 @@ public class EncoderGUI {
     boolean nameSet;
     // state: 0 is encrypt, 1 decrypt
     int state;
+    int[] bytes;
+    
 
     public static void main(String... args) {
         EncoderGUI gui = new EncoderGUI();
@@ -80,6 +86,7 @@ public class EncoderGUI {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setBackground(new Color(176, 224, 230));
         frame.setVisible(true);
+        // Add a panel to South that displays Filename
     }
 
     private void popup(String msg) {
@@ -103,13 +110,6 @@ public class EncoderGUI {
 
     private void queryName() {
         fileChooser.setMode(FileDialog.SAVE);
-        /**
-        int result = fileChooser.showSaveDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            saveFile = fileChooser.getSelectedFile();
-            doAction();
-        }
-        */
         fileChooser.setVisible(true);
         File[] files = fileChooser.getFiles();
         if (files.length > 0) {
@@ -155,38 +155,45 @@ public class EncoderGUI {
 
     private void fileChosen() {
         try {
-            BufferedReader file =
-                new BufferedReader(new FileReader(currFile));
-            text = new StringBuilder();
-            try {
-                for (String line = file.readLine(); line != null; line = file.readLine()) {
-                    text.append(line + "\n");
-                }
-                file.close();
-                fileText.setText(text.toString());
-            } catch (IOException io) {
-                popup("Error while retrieving file text.");
+            FileInputStream file = new FileInputStream(currFile);
+            ArrayList<Integer> byteArr = new ArrayList<Integer>();
+            int currByte = file.read();
+            while (currByte > -1) {
+                byteArr.add(currByte);
+                currByte = file.read();
             }
+            bytes = new int[byteArr.size()];
+            byte[] realBytes = new byte[bytes.length];
+            for (int i = 0; i < byteArr.size(); i += 1) {
+                int val = byteArr.get(i);
+                bytes[i] = val;
+                realBytes[i] = (byte) val;
+            }
+            fileText.setText(new String(realBytes, "MacRoman"));
         } catch (FileNotFoundException f) {
             popup("Error: file \"" + currFile + "\" not found.\n");
+        } catch (IOException e) {
+            popup("Error while retrieving file text.");
         }
     }
 
     private int transformText() {
         int status = 0;
-        String transformed = "";
+        int[] transformed = null;
         if (state == 1) {
             try {
-                transformed = enc.decode(text.toString());
+                transformed = enc.decode(bytes);
             } catch (NumberFormatException num) {
                 status = 1;
             }
         } else {
-            transformed = enc.encode(text.toString());
+            transformed = enc.encode(bytes);
         }
         try {
-            FileWriter fileW = new FileWriter(saveFile);
-            fileW.write(transformed);
+            FileOutputStream fileW = new FileOutputStream(saveFile);
+            for (int b : transformed) {
+                fileW.write(b);
+            }
             fileW.close();
         } catch (IOException io) {
             status = 2;
@@ -204,13 +211,6 @@ public class EncoderGUI {
 
     class OpenButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            /**
-            int result = fileChooser.showOpenDialog(null);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                currFile = fileChooser.getSelectedFile();
-                fileChosen();
-            }
-            */
             fileChooser.setMode(FileDialog.LOAD);
             fileChooser.setVisible(true);
             File[] files = fileChooser.getFiles();
