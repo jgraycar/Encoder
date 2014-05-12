@@ -26,14 +26,6 @@ public class Encoder {
         generateLists();
     }
 
-    public static void main(String... args) {
-        Test enc = new Test();
-        if (args.length == 0) {
-            System.out.println("Error: Encoder requires at least 1 argument.");
-            System.exit(1);
-        }
-    }
-
     protected int[] encode(int[] text) {
         Random rando = new Random();
         text = reverseInts(text);
