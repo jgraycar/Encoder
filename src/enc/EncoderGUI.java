@@ -23,7 +23,7 @@ import java.io.FileNotFoundException;
 
 public class EncoderGUI {
 
-    JFrame frame, pop;
+    JFrame frame;
     FileDialog fileChooser;
     JFileChooser jFile;
     Encoder enc;
@@ -32,9 +32,11 @@ public class EncoderGUI {
     StringBuilder text;
     File currFile, saveFile;
     String fileName;
+    JLabel fileNameLabel;
+    JPanel fileNamePanel;
     JTextArea fileText;
     ButtonsPanel buttons;
-    JButton encButt, decButt, openButt, closeButt;
+    JButton encButt, decButt, openButt;
     boolean nameSet;
     // state: 0 is encrypt, 1 decrypt
     int state;
@@ -82,30 +84,24 @@ public class EncoderGUI {
         scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         filePanel.add(scroller);
+
+        // Set up fileNameLabel and fileNamePanel
+        fileNamePanel = new JPanel();
+        fileNamePanel.setLayout(new BoxLayout(fileNamePanel, BoxLayout.X_AXIS));
+        fileNameLabel = new JLabel("");
+        fileNamePanel.add(Box.createHorizontalGlue());
+        fileNamePanel.add(fileNameLabel);
+        fileNamePanel.add(Box.createHorizontalGlue());
+        frame.getContentPane().add(BorderLayout.SOUTH, fileNamePanel);
+
         frame.setSize(1000, 800);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setBackground(new Color(176, 224, 230));
         frame.setVisible(true);
-        // Add a panel to South that displays Filename
     }
 
     private void popup(String msg) {
-        pop = new JFrame();
-        JPanel popPanel = new JPanel();
-        JLabel msgLabel = new JLabel(msg + "   ");
-        closeButt = new JButton("Ok");
-        closeButt.addActionListener(new CloseButtonListener());
-        msgLabel.setFont(new Font("serif", Font.BOLD, 20));
-        popPanel.setLayout(new BoxLayout(popPanel, BoxLayout.X_AXIS));
-        popPanel.add(Box.createHorizontalGlue());
-        popPanel.add(msgLabel);
-        popPanel.add(closeButt);
-        popPanel.add(Box.createHorizontalGlue());
-        pop.getContentPane().add(BorderLayout.CENTER, popPanel);
-        pop.setSize(msg.length() * 10 + 75, 200);
-        pop.setLocationRelativeTo(null);
-        pop.setVisible(true);
-        pop.getRootPane().setDefaultButton(closeButt);
+        JOptionPane.showMessageDialog(null, msg, msg, JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void queryName() {
@@ -133,7 +129,7 @@ public class EncoderGUI {
         } else if (status == 2) {
             popup("Error: encountered IOException.");
         } else if (status == 0) {
-            popup("\"" + jFile.getName(currFile) + tail.toString());
+            popup("\"" + fileName + tail.toString());
             currFile = saveFile;
             fileChosen();
         }
@@ -170,6 +166,8 @@ public class EncoderGUI {
                 realBytes[i] = (byte) val;
             }
             fileText.setText(new String(realBytes, "MacRoman"));
+            fileName = jFile.getName(currFile);
+            fileNameLabel.setText(fileName);
         } catch (FileNotFoundException f) {
             popup("Error: file \"" + currFile + "\" not found.\n");
         } catch (IOException e) {
@@ -202,12 +200,6 @@ public class EncoderGUI {
     }
 
     // ---------------------------- Listeners -----------------------------
-
-    class CloseButtonListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            pop.dispatchEvent(new WindowEvent(pop, WindowEvent.WINDOW_CLOSING));
-        }
-    }
 
     class OpenButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
