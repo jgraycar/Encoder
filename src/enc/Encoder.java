@@ -29,11 +29,14 @@ public class Encoder {
     protected int[] encode(int[] text) {
         Random rando = new Random();
         text = reverseInts(text);
-        int[] modded = new int[text.length * 2];
-        for (int k = 0; k < modded.length; k += 2) {
+        int[] modded = new int[text.length * 2 + 4];
+        for (int i = 0; i < 4; i += 1) {
+            modded[i] = 0xFF;
+        }
+        for (int k = 4; k < modded.length; k += 2) {
             int rand = rando.nextInt(_primes.length - 1);
             int mod = _primes[rand];
-            int i = modShift(text[k / 2], mod);
+            int i = modShift(text[(k - 4) / 2], mod);
             modded[k] = modShift(mod, largePrime);
             modded[k + 1] = i;
         }
@@ -60,8 +63,16 @@ public class Encoder {
     }
 
     protected int[] decode(int[] encoded) {
-        int[] decoded = new int[encoded.length / 4];
-        for (int i = 0; i < encoded.length; i += 4) {
+        int[] decoded = new int[(encoded.length - 8)/ 4];
+        for (int k = 0; k < 8; k += 2) {
+            int upper = encoded[k];
+            int lower = encoded[k + 1];
+            int num = (upper << 8) | lower;
+            if (num != 0xFF) {
+                return null;
+            }
+        }
+        for (int i = 8; i < encoded.length; i += 4) {
             int modUpper = encoded[i];
             int modLower = encoded[i + 1];
             int mod = (modUpper << 8) | modLower;
@@ -70,7 +81,7 @@ public class Encoder {
             int xLower = encoded[i + 3];
             int x = (xUpper << 8) | xLower;
             x = modShift(x, mod);
-            decoded[i / 4] = x;
+            decoded[(i - 8) / 4] = x;
         }
         return reverseInts(decoded);
     }

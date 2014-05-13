@@ -101,7 +101,11 @@ public class EncoderGUI {
     }
 
     private void popup(String msg) {
-        JOptionPane.showMessageDialog(null, msg, msg, JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(null, msg, "Success!", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void popupErr(String msg) {
+        JOptionPane.showMessageDialog(null, msg, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private void queryName() {
@@ -124,28 +128,13 @@ public class EncoderGUI {
         }
         int status = transformText();
         if (status == 1) {
-            popup("Error: file \"" + currFile + "\" is not encrypted.");
-            restoreText();
+            popupErr("Error: file \"" + fileName + "\" is not encrypted.");
         } else if (status == 2) {
-            popup("Error: encountered IOException.");
+            popupErr("Error: encountered IOException.");
         } else if (status == 0) {
             popup("\"" + fileName + tail.toString());
             currFile = saveFile;
             fileChosen();
-        }
-    }
-
-    private void restoreText() {
-        try {
-            FileWriter fileW = new FileWriter(currFile);
-            fileW.write(text.toString());
-            fileW.close();
-            boolean deleted = saveFile.delete();
-            if (!deleted) {
-                popup("Error: corrupted file could not be deleted.");
-            }
-        } catch (IOException io) {
-            popup("Error: could not restore text.");
         }
     }
 
@@ -178,11 +167,11 @@ public class EncoderGUI {
     private int transformText() {
         int status = 0;
         int[] transformed = null;
+        boolean worked = true;
         if (state == 1) {
-            try {
-                transformed = enc.decode(bytes);
-            } catch (NumberFormatException num) {
-                status = 1;
+            transformed = enc.decode(bytes);
+            if (transformed == null) {
+                return 1;
             }
         } else {
             transformed = enc.encode(bytes);
