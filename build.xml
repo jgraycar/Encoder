@@ -6,8 +6,29 @@
   <property name="build" location="build"/>
   <property name="dist" location="dist"/>
   <property name="Main-Class" value="enc.EncoderGUI"/>
+  <property name="builder" value="Joel Graycar"/>
   <property name="volname" value="Encoder"/>
+  <property name="poi" location="lib/poi-3.10-FINAL"/>
   <property environment="env"/>
+
+  <path id="build.classpath">
+    <fileset dir="${poi}">
+      <include name="*.jar"/>
+      <include name="lib/*.jar"/>
+      <include name="ooxml-lib/*.jar"/>
+    </fileset>
+  </path>
+
+  <target name="display-classpath">
+    <!-- Write the classpath to the console. Helpful for debugging -->
+    <!-- Create one line per classpath element-->
+    <pathconvert pathsep="${line.separator}"
+                 property="echo.classpath"
+                 refid="build.classpath"/>
+    <!-- Write the result to the console -->
+    <echo message="build.classpath:" />
+    <echo message="${echo.classpath}" />
+  </target>
 
   <target name="init">
     <!-- Create time stamp -->
@@ -19,24 +40,36 @@
   <target name="compile" depends="init"
           description="compile source" >
     <!-- Compile java code from ${src} into ${build} -->
-    <javac includeantruntime="false" srcdir="${src}" destdir="${build}"/>
+    <javac includeantruntime="false" srcdir="${src}" destdir="${build}"
+           classpathref="build.classpath"/>
   </target>
+
 
   <target name="jar" depends="compile"
           description="generate the distribution jar file" >
     <!-- Create the distribution directory -->
     <mkdir dir="${dist}/lib"/>
-
+    <!-- Set up jar classpath -->
+    <manifestclasspath property="jar.classpath"
+                       jarfile="${dist}/lib/Encoder.jar">
+      <classpath refid="build.classpath"/>
+    </manifestclasspath>
     <!-- Put everything in ${build} into Encoder-${DSTAMP}.jar file -->
-    <jar jarfile="${dist}/lib/${volname}-${DSTAMP}.jar" basedir="${build}">
+    <jar jarfile="${dist}/lib/${volname}-${DSTAMP}.jar"
+         basedir="${build}">
       <manifest>
         <attribute name="Main-Class" value="${Main-Class}"/>
+        <attribute name="Built-By" value="${builder}"/>
+        <attribute name="Class-Path" value="${jar.classpath}"/>
       </manifest>
     </jar>
     <!-- Put everything in ${build} into Encoder.jar file -->
-    <jar jarfile="${dist}/lib/${volname}.jar" basedir="${build}">
+    <jar jarfile="${dist}/lib/${volname}.jar"
+         basedir="${build}">
       <manifest>
         <attribute name="Main-Class" value="${Main-Class}"/>
+        <attribute name="Built-By" value="${builder}"/>
+        <attribute name="Class-Path" value="${jar.classpath}"/>
       </manifest>
     </jar>
   </target>
@@ -62,6 +95,7 @@
             icon="src/encoder.icns">
             <runtime dir="${env.JAVA_HOME}"/>
             <classpath file="dist/lib/${volname}.jar" />
+            <classpath dir="lib"/>
       </bundleapp>
   </target>
 

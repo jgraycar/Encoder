@@ -1,5 +1,8 @@
 package enc;
 
+import org.apache.poi.POITextExtractor;
+import org.apache.poi.extractor.ExtractorFactory;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -23,66 +26,71 @@ import java.io.FileNotFoundException;
 
 public class EncoderGUI {
 
-    JFrame frame;
-    FileDialog fileChooser;
-    JFileChooser jFile;
     Encoder enc;
-    FilePanel filePanel;
-    String[] files;
-    StringBuilder text;
-    File currFile, saveFile;
-    String fileName;
+    JFrame frame;
+    JPanel filePanel, fileNamePanel, centerPanel;
     JLabel fileNameLabel;
-    JPanel fileNamePanel;
     JTextArea fileText;
+    JButton encButt, decButt, chooseButt, openButt;
+    JFileChooser jFile;
+    FileDialog fileChooser;
+    File currFile, saveFile;
+    Color bckgrndClr;
+    String[] files;
+    String fileName, fileType;
     ButtonsPanel buttons;
-    JButton encButt, decButt, openButt;
-    boolean nameSet;
-    // state: 0 is encrypt, 1 decrypt
+    boolean firstTime;
     int state;
     int[] bytes;
-    
 
     public static void main(String... args) {
         EncoderGUI gui = new EncoderGUI();
-        gui.enc = new Encoder();
         gui.go();
     }
 
     public void go() {
+        enc = new Encoder();
+        bckgrndClr = new Color(176, 224, 230);
         frame = new JFrame();
-        filePanel = new FilePanel();
+        filePanel = new JPanel();
+        centerPanel = new JPanel();
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         fileChooser = new FileDialog(frame);
         jFile = new JFileChooser();
         filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.Y_AXIS));
-        frame.getContentPane().add(BorderLayout.CENTER, filePanel);
+        frame.getContentPane().add(BorderLayout.CENTER, centerPanel);
 
-        // Set up enc/dec & open buttons
+        // Set up enc/dec & choose/open buttons
         encButt = new JButton("Encrypt");
         decButt = new JButton("Decrypt");
+        chooseButt = new JButton("Choose file");
         openButt = new JButton("Open file");
         encButt.addActionListener(new EncryptButtonListener());
         decButt.addActionListener(new DecryptButtonListener());
+        chooseButt.addActionListener(new ChooseButtonListener());
         openButt.addActionListener(new OpenButtonListener());
         encButt.setOpaque(true);
         decButt.setOpaque(true);
+        chooseButt.setOpaque(true);
         openButt.setOpaque(true);
-        encButt.setBackground(new Color(176, 224, 230));
-        decButt.setBackground(new Color(176, 224, 230));
-        openButt.setBackground(new Color(176, 224, 230));
+        encButt.setBackground(bckgrndClr);
+        decButt.setBackground(bckgrndClr);
+        chooseButt.setBackground(bckgrndClr);
+        openButt.setBackground(bckgrndClr);
         buttons = new ButtonsPanel();
         buttons.add(encButt);
         buttons.add(decButt);
-        buttons.add(openButt);
-        filePanel.add(buttons);
+        buttons.add(chooseButt);
+        centerPanel.add(buttons);
+        centerPanel.add(filePanel);
 
         // Set up text field
         fileText = new JTextArea(45, 50);
         fileText.setEditable(false);
         JScrollPane scroller = new JScrollPane(fileText);
-        fileText.setLineWrap(false);
+        fileText.setLineWrap(true);
         scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        //scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         filePanel.add(scroller);
 
         // Set up fileNameLabel and fileNamePanel
@@ -98,6 +106,7 @@ public class EncoderGUI {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().setBackground(new Color(176, 224, 230));
         frame.setVisible(true);
+        firstTime = true;
     }
 
     private void popup(String msg) {
@@ -108,6 +117,7 @@ public class EncoderGUI {
         JOptionPane.showMessageDialog(null, msg, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
+    /** Query user for desired file to save transformed text in. */
     private void queryName() {
         fileChooser.setMode(FileDialog.SAVE);
         fileChooser.setVisible(true);
@@ -118,6 +128,9 @@ public class EncoderGUI {
         }
     }
 
+    /** Handle the implementation of the encrypt/decrypt action.
+     *  state = 1 means decrypt, 0 means encrypt.
+     *  State is set by the encrypt/decrypt buttons. */
     private void doAction() {
         StringBuilder newText = new StringBuilder();
         StringBuilder tail = new StringBuilder();
@@ -128,7 +141,7 @@ public class EncoderGUI {
         }
         int status = transformText();
         if (status == 1) {
-            popupErr("Error: file \"" + fileName + "\" is not encrypted.");
+            popupErr("Error: cannot decrypt; file \"" + fileName + "\" is not encrypted.");
         } else if (status == 2) {
             popupErr("Error: encountered IOException.");
         } else if (status == 0) {
@@ -138,6 +151,10 @@ public class EncoderGUI {
         }
     }
 
+    /** Stores the bytes of currFile in int[] bytes, sets fileName and fileType,
+     *  sets fileNameLabel and fileText. Displays popup message if file cannot be opened,
+     *  or encounter IOException while retrieving text.
+     */
     private void fileChosen() {
         try {
             FileInputStream file = new FileInputStream(currFile);
@@ -154,16 +171,59 @@ public class EncoderGUI {
                 bytes[i] = val;
                 realBytes[i] = (byte) val;
             }
-            fileText.setText(new String(realBytes, "MacRoman"));
             fileName = jFile.getName(currFile);
+            String[] nameParts = fileName.split("\\.");
+            fileType = nameParts[nameParts.length - 1];
             fileNameLabel.setText(fileName);
+            String text = new String(realBytes, "MacRoman");
+            String testText = wordDocText();
+            if (testText != null) {
+                text = testText;
+            }
+            fileText.setText(text);
+            if (firstTime && Desktop.isDesktopSupported()) {
+                buttons.add(openButt);
+            }
+            firstTime = false;
         } catch (FileNotFoundException f) {
-            popup("Error: file \"" + currFile + "\" not found.\n");
+            popupErr("Error: file \"" + currFile + "\" could not be opened.");
         } catch (IOException e) {
-            popup("Error while retrieving file text.");
+            popupErr("Error while retrieving file text.");
         }
     }
 
+    /** Uses the Apache POI API to extract the text from a Microsoft Office file.
+     *  If currFile is not of any recognized Office format, will return null. */
+    private String wordDocText() {
+        StringBuilder str = new StringBuilder();
+        try {
+            POITextExtractor extractor = ExtractorFactory.createExtractor(currFile);
+            str.append(reformat(extractor.getText()));
+        } catch (Exception e) {
+            System.err.println("Error: file is neither OLE2 or OOXML file.");
+            return null;
+        }
+        return str.toString();
+    }
+    /** Adds an extra newline between each paragraph of TEXT.
+     *  @param text is the output of extractor.getText().
+     *  @return returns TEXT with an extra newline after each paragraph.
+     */
+    private String reformat(String text) {
+        String[] parts = text.split("\n");
+        StringBuilder str = new StringBuilder();
+        for (int i = 0; i < parts.length; i += 1) {
+            str.append(parts[i] + "\n" + "\n");
+        }
+        return str.toString();
+    }
+
+    /** Do the work of encrypting/decrypting text. 
+     *  int[] bytes is the bytes of the current file, as found by fileChosen().
+     *  @return 0 if text successfully transformed and saved,
+     *          1 if op is decode and text not encrypted,
+     *          2 if could not write to saveFile.
+     */
     private int transformText() {
         int status = 0;
         int[] transformed = null;
@@ -190,7 +250,7 @@ public class EncoderGUI {
 
     // ---------------------------- Listeners -----------------------------
 
-    class OpenButtonListener implements ActionListener {
+    class ChooseButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             fileChooser.setMode(FileDialog.LOAD);
             fileChooser.setVisible(true);
@@ -216,6 +276,22 @@ public class EncoderGUI {
         }
     }
 
+    class OpenButtonListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            try {
+                Desktop.getDesktop().open(currFile);
+            } catch (IOException io) {
+                popupErr("Error: no default application for file type \"." + fileType + "\"");
+            } catch (NullPointerException nll) {
+                popupErr("Error: null file.");
+            } catch (IllegalArgumentException ill) {
+                popupErr("Error: file not found.");
+            } catch (SecurityException sec) {
+                popupErr("Error: do not have permission to read file.");
+            }
+        }
+    }
+
     // ----------------------------- Panels -------------------------------
 
     class FileMenuPanel extends JPanel {
@@ -225,15 +301,9 @@ public class EncoderGUI {
         }
     }
 
-    class FilePanel extends JPanel {
-        public void paintComponent(Graphics g) {
-
-        }
-    }
-
     class ButtonsPanel extends JPanel {
         public void paintComponent(Graphics g) {
-            g.setColor(new Color(176, 224, 230));
+            g.setColor(bckgrndClr);
             g.fillRect(0, 0, this.getWidth(), this.getHeight());
         }
     }
