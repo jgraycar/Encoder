@@ -101,6 +101,12 @@
       </bundleapp>
   </target>
 
+  <target name="run-app" depends="bundle-app">
+    <exec executable="/usr/bin/open" os="Mac OS X" failonerror="true">
+      <arg value="${dist}/${volname}.app"/>
+    </exec>
+  </target>
+
   <target name="dmg" depends="bundle-app"
           description="create disc image file containing app file">
     <delete file="${volname}.dmg"/>

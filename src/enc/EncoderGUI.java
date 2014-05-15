@@ -12,9 +12,15 @@ import javax.imageio.*;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+
 import javazoom.jlgui.basicplayer.BasicPlayer;
 import javazoom.jlgui.basicplayer.BasicController;
 import javazoom.jlgui.basicplayer.BasicPlayerException;
+
+import com.mpatric.mp3agic.Mp3File;
+import com.mpatric.mp3agic.ID3v2;
+import com.mpatric.mp3agic.UnsupportedTagException;
+import com.mpatric.mp3agic.InvalidDataException;
 
 import java.lang.StringBuilder;
 
@@ -22,6 +28,7 @@ import java.util.ArrayList;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.ByteArrayInputStream;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileInputStream;
@@ -64,6 +71,7 @@ public class EncoderGUI {
         frame = new JFrame();
         filePanel = new JPanel();
         centerPanel = new JPanel();
+        centerPanel.setBackground(bckgrndClr);
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         fileChooser = new FileDialog(frame);
         jFile = new JFileChooser();
@@ -99,10 +107,25 @@ public class EncoderGUI {
         BasicPlayer player = new BasicPlayer();
         control = (BasicController) player;
         musicPanel.setLayout(new BoxLayout(musicPanel, BoxLayout.X_AXIS));
-        playButt = new JButton("Play");
-        pauseButt = new JButton("Pause");
+        try {
+            BufferedImage playIcon = ImageIO.read(new File("/Users/Joel/CompSci/Encoder/src/play.gif"));
+            BufferedImage pauseIcon = ImageIO.read(new File("/Users/Joel/CompSci/Encoder/src/pause.png"));
+            playButt = new JButton(new ImageIcon(playIcon));
+            pauseButt = new JButton(new ImageIcon(pauseIcon));
+            playButt.setBorder(BorderFactory.createEmptyBorder());
+            pauseButt.setBorder(BorderFactory.createEmptyBorder());
+            playButt.setContentAreaFilled(false);
+            pauseButt.setContentAreaFilled(false);
+            playButt.setSize(50, 50);
+            pauseButt.setSize(50, 50);
+        } catch (IOException io) {
+            playButt = new JButton("Play");
+            pauseButt = new JButton("Pause");
+        }
         playButt.addActionListener(new PlayButtonListener());
         pauseButt.addActionListener(new PauseButtonListener());
+        playButt.setOpaque(true);
+        pauseButt.setOpaque(true);
         musicPanel.add(playButt);
         musicPanel.add(pauseButt);
 
@@ -205,11 +228,24 @@ public class EncoderGUI {
                 control.open(currFile);
                 control.play();
                 control.setGain(0.85);
-                System.out.println("music file");
             } catch (Exception e) {
                 music = false;
             }
             if (music) {
+                try {
+                    Mp3File mp3 = new Mp3File(currFile.getAbsolutePath());
+                    if (mp3.hasId3v2Tag()) {
+                        ID3v2 tag = mp3.getId3v2Tag();
+                        byte[] imageData = tag.getAlbumImage();
+                        if (imageData != null) {
+                            String mimeType = tag.getAlbumImageMimeType();
+                            BufferedImage img = ImageIO.read(new ByteArrayInputStream(imageData));
+                            JLabel imgLabel = new JLabel(new ImageIcon(img));
+                            centerPanel.add(imgLabel);
+                        }
+                    }
+                } catch (Exception e) {
+                }
                 centerPanel.add(musicPanel);
             } else {
                 BufferedImage img = ImageIO.read(currFile);
@@ -340,7 +376,7 @@ public class EncoderGUI {
     class PlayButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
             try {
-                control.play();
+                control.resume();
             } catch (BasicPlayerException p) {
                 p.printStackTrace();
             }
