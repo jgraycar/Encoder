@@ -8,14 +8,12 @@
   <property name="Main-Class" value="enc.EncoderGUI"/>
   <property name="builder" value="Joel Graycar"/>
   <property name="volname" value="Encoder"/>
-  <property name="poi" location="lib/poi-3.10-FINAL"/>
   <property environment="env"/>
 
   <path id="build.classpath">
-    <fileset dir="${poi}">
-      <include name="*.jar"/>
-      <include name="lib/*.jar"/>
-      <include name="ooxml-lib/*.jar"/>
+    <fileset dir="lib">
+      <include name="**/*.jar"/>
+      <exclude name="**/appbundler*"/>
     </fileset>
   </path>
 
@@ -72,6 +70,10 @@
         <attribute name="Class-Path" value="${jar.classpath}"/>
       </manifest>
     </jar>
+  </target>
+
+  <target name="run-jar" depends="jar">
+    <java jar="${dist}/lib/${volname}.jar" fork="true"/>
   </target>
 
   <target name="clean"

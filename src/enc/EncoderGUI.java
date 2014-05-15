@@ -3,9 +3,18 @@ package enc;
 import org.apache.poi.POITextExtractor;
 import org.apache.poi.extractor.ExtractorFactory;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+
+import javax.swing.*;
+import javax.imageio.*;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import javazoom.jlgui.basicplayer.BasicPlayer;
+import javazoom.jlgui.basicplayer.BasicController;
+import javazoom.jlgui.basicplayer.BasicPlayerException;
 
 import java.lang.StringBuilder;
 
@@ -28,10 +37,10 @@ public class EncoderGUI {
 
     Encoder enc;
     JFrame frame;
-    JPanel filePanel, fileNamePanel, centerPanel;
+    JPanel filePanel, fileNamePanel, centerPanel, musicPanel;
     JLabel fileNameLabel;
     JTextArea fileText;
-    JButton encButt, decButt, chooseButt, openButt;
+    JButton encButt, decButt, chooseButt, openButt, playButt, pauseButt;
     JFileChooser jFile;
     FileDialog fileChooser;
     File currFile, saveFile;
@@ -42,6 +51,7 @@ public class EncoderGUI {
     boolean firstTime;
     int state;
     int[] bytes;
+    BasicController control;
 
     public static void main(String... args) {
         EncoderGUI gui = new EncoderGUI();
@@ -84,13 +94,24 @@ public class EncoderGUI {
         centerPanel.add(buttons);
         centerPanel.add(filePanel);
 
+        // Set up music player
+        musicPanel = new JPanel();
+        BasicPlayer player = new BasicPlayer();
+        control = (BasicController) player;
+        musicPanel.setLayout(new BoxLayout(musicPanel, BoxLayout.X_AXIS));
+        playButt = new JButton("Play");
+        pauseButt = new JButton("Pause");
+        playButt.addActionListener(new PlayButtonListener());
+        pauseButt.addActionListener(new PauseButtonListener());
+        musicPanel.add(playButt);
+        musicPanel.add(pauseButt);
+
         // Set up text field
         fileText = new JTextArea(45, 50);
         fileText.setEditable(false);
         JScrollPane scroller = new JScrollPane(fileText);
         fileText.setLineWrap(true);
         scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        //scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         filePanel.add(scroller);
 
         // Set up fileNameLabel and fileNamePanel
@@ -175,12 +196,37 @@ public class EncoderGUI {
             String[] nameParts = fileName.split("\\.");
             fileType = nameParts[nameParts.length - 1];
             fileNameLabel.setText(fileName);
-            String text = new String(realBytes, "MacRoman");
-            String testText = wordDocText();
-            if (testText != null) {
-                text = testText;
+            centerPanel.removeAll();
+            centerPanel.revalidate();
+            centerPanel.repaint();
+            centerPanel.add(buttons);
+            boolean music = true;
+            try {
+                control.open(currFile);
+                control.play();
+                control.setGain(0.85);
+                System.out.println("music file");
+            } catch (Exception e) {
+                music = false;
             }
-            fileText.setText(text);
+            if (music) {
+                centerPanel.add(musicPanel);
+            } else {
+                BufferedImage img = ImageIO.read(currFile);
+                if (img != null) {
+                    JLabel imgLabel = new JLabel(new ImageIcon(img));
+                    JScrollPane scroller = new JScrollPane(imgLabel);
+                    centerPanel.add(scroller);
+                } else {
+                    centerPanel.add(filePanel);
+                    String text = new String(realBytes, "MacRoman");
+                    String testText = wordDocText();
+                    if (testText != null) {
+                        text = testText;
+                    }
+                    fileText.setText(text);
+                }
+            }
             if (firstTime && Desktop.isDesktopSupported()) {
                 buttons.add(openButt);
             }
@@ -200,7 +246,6 @@ public class EncoderGUI {
             POITextExtractor extractor = ExtractorFactory.createExtractor(currFile);
             str.append(reformat(extractor.getText()));
         } catch (Exception e) {
-            System.err.println("Error: file is neither OLE2 or OOXML file.");
             return null;
         }
         return str.toString();
@@ -288,6 +333,26 @@ public class EncoderGUI {
                 popupErr("Error: file not found.");
             } catch (SecurityException sec) {
                 popupErr("Error: do not have permission to read file.");
+            }
+        }
+    }
+
+    class PlayButtonListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            try {
+                control.play();
+            } catch (BasicPlayerException p) {
+                p.printStackTrace();
+            }
+        }
+    }
+
+    class PauseButtonListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            try {
+                control.pause();
+            } catch (BasicPlayerException p) {
+                p.printStackTrace();
             }
         }
     }
