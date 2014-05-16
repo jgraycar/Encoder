@@ -5,6 +5,9 @@
   <property name="src" location="src"/>
   <property name="build" location="build"/>
   <property name="dist" location="dist"/>
+  <property name="keystore" location="/Users/Joel/.keystore"/>
+  <property name="key-alias" value="EncoderKey"/>
+  <property name="store-pass" value="bibbles"/>
   <property name="Main-Class" value="enc.EncoderGUI"/>
   <property name="builder" value="Joel Graycar"/>
   <property name="volname" value="Encoder"/>
@@ -84,11 +87,19 @@
     <delete file="${volname}.dmg"/>
   </target>
 
+  <target name="sign-jar" depends="jar"
+          description="sign jar file using jarsigner tool.">
+    <signjar jar="${dist}/lib/${volname}.jar"
+             alias="${key-alias}"
+             keystore="${keystore}"
+             storepass="${store-pass}"/>
+  </target>
+
   <taskdef name="bundleapp"
              classname="com.oracle.appbundler.AppBundlerTask"   
              classpath="lib/appbundler-1.0.jar" />
 
-  <target name="bundle-app" depends="jar">
+  <target name="bundle-app" depends="sign-jar">
       <bundleapp outputdirectory="dist"
             name="${volname}"
             displayname="${volname}"
