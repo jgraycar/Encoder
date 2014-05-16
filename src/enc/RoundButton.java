@@ -31,7 +31,6 @@ class RoundButton extends JButton {
       return;
     }
     setBorder(BorderFactory.createEmptyBorder(1,1,1,1));
-    //setBackground(bckgrndClr);
     setContentAreaFilled(false);
     setFocusPainted(false);
     //setVerticalAlignment(SwingConstants.TOP);

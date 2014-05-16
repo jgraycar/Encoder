@@ -47,12 +47,13 @@ public class EncoderGUI {
 
     Encoder enc;
     JFrame frame;
-    JPanel filePanel, fileNamePanel, centerPanel, musicPanel;
+    ColoredPanel filePanel, centerPanel, musicPanel;
+    JPanel fileNamePanel;
     JLabel fileNameLabel;
     JProgressBar progBar;
     JTextArea fileTextArea;
     JButton encButt, decButt, chooseButt, openButt;
-    RoundButton playButt, pauseButt;
+    RoundButton playButt, pauseButt, colorButt;
     JFileChooser jFile;
     FileDialog fileChooser;
     File currFile, saveFile;
@@ -76,9 +77,8 @@ public class EncoderGUI {
         bckgrndClr = new Color(176, 224, 230);
         progBar = new JProgressBar(0, 100);
         frame = new JFrame();
-        filePanel = new JPanel();
-        centerPanel = new JPanel();
-        centerPanel.setBackground(bckgrndClr);
+        filePanel = new ColoredPanel();
+        centerPanel = new ColoredPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         fileChooser = new FileDialog(frame);
         jFile = new JFileChooser();
@@ -90,31 +90,46 @@ public class EncoderGUI {
         decButt = new JButton("Decrypt");
         chooseButt = new JButton("Choose file");
         openButt = new JButton("Open file");
+        try {
+            BufferedImage colorIcon =
+                ImageIO.read(new File("/Users/Joel/CompSci/Encoder/src/color.gif"));
+            colorButt = new RoundButton(new ImageIcon(colorIcon));
+            colorButt.setBorder(BorderFactory.createEmptyBorder());
+            colorButt.setContentAreaFilled(false);
+        } catch (IOException io) {
+            colorButt = new RoundButton("color");
+        }
         encButt.addActionListener(new EncryptButtonListener());
         decButt.addActionListener(new DecryptButtonListener());
         chooseButt.addActionListener(new ChooseButtonListener());
         openButt.addActionListener(new OpenButtonListener());
+        colorButt.addActionListener(new ColorButtonListener());
         encButt.setOpaque(true);
         decButt.setOpaque(true);
         chooseButt.setOpaque(true);
         openButt.setOpaque(true);
+        colorButt.setOpaque(true);
         encButt.setBackground(bckgrndClr);
         decButt.setBackground(bckgrndClr);
         chooseButt.setBackground(bckgrndClr);
         openButt.setBackground(bckgrndClr);
+        colorButt.setBackground(bckgrndClr);
         buttons = new ButtonsPanel();
         buttons.add(encButt);
         buttons.add(decButt);
         buttons.add(chooseButt);
+        buttons.add(openButt);
+        openButt.setVisible(false);
+        buttons.add(colorButt);
         centerPanel.add(buttons);
         centerPanel.add(filePanel);
 
         // Set up music player
-        musicPanel = new JPanel();
+        musicPanel = new ColoredPanel();
         BasicPlayer player = new BasicPlayer();
         control = (BasicController) player;
         musicPanel.setLayout(new BoxLayout(musicPanel, BoxLayout.X_AXIS));
-        Box box = Box.createHorizontalBox();
+        //Box box = Box.createHorizontalBox();
         try {
             BufferedImage playIcon =
                 ImageIO.read(new File("/Users/Joel/CompSci/Encoder/src/play.gif"));
@@ -138,11 +153,13 @@ public class EncoderGUI {
         pauseButt.setOpaque(true);
         playButt.setBackground(bckgrndClr);
         pauseButt.setBackground(bckgrndClr);
-        box.add(playButt);
-        box.add(pauseButt);
-        box.setOpaque(true);
-        box.setBackground(bckgrndClr);
-        musicPanel.add(box);
+        //box.add(playButt);
+        //box.add(pauseButt);
+        //box.setOpaque(true);
+        //box.setBackground(bckgrndClr);
+        //musicPanel.add(box);
+        musicPanel.add(playButt);
+        musicPanel.add(pauseButt);
 
         // Set up text field
         fileTextArea = new JTextArea(45, 50);
@@ -219,6 +236,9 @@ public class EncoderGUI {
      */
     private void fileChosen() {
         // Need some thread to handle appearance / disappearance of progBar
+        try {
+            control.stop();
+        } catch (BasicPlayerException b) {}
         progBar.setValue(0);
         OpenFileTask task = new OpenFileTask();
         frame.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -413,11 +433,16 @@ public class EncoderGUI {
                         fileType = "office";
                     } else {
                         progBar.setValue(35);
-                        try {
-                            control.open(currFile);
-                            progBar.setValue(75);
-                            fileType = "music";
-                        } catch (Exception e) {
+                        if (fileExt.equals("mp3")) {
+                            try {
+                                control.open(currFile);
+                                progBar.setValue(75);
+                                fileType = "music";
+                            } catch (Exception e) {
+                                progBar.setValue(90);
+                                fileType = "unknown";
+                            }
+                        } else {
                             progBar.setValue(90);
                             fileType = "unknown";
                         }
@@ -425,7 +450,7 @@ public class EncoderGUI {
                 }
                 progBar.setValue(95);
                 if (firstTime && Desktop.isDesktopSupported()) {
-                    buttons.add(openButt);
+                    openButt.setVisible(true);
                 }
                 firstTime = false;
                 progBar.setValue(100);
@@ -504,20 +529,52 @@ public class EncoderGUI {
         }
     }
 
+    class ColorButtonListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            int r = (int) (Math.random() * 255);
+            int g = (int) (Math.random() * 255);
+            int b = (int) (Math.random() * 255);
+            bckgrndClr = new Color(r, g, b);
+            for (JButton button : buttons.getButtons()) {
+                button.setBackground(bckgrndClr);
+            }
+            playButt.setBackground(bckgrndClr);
+            pauseButt.setBackground(bckgrndClr);
+            frame.repaint();
+        }
+    }
+
     // ----------------------------- Panels -------------------------------
 
-    class FileMenuPanel extends JPanel {
+    class ColoredPanel extends JPanel {
         public void paintComponent(Graphics g) {
-            g.setColor(new Color(175, 238, 238));
+            g.setColor(bckgrndClr);
             g.fillRect(0, 0, this.getWidth(), this.getHeight());
         }
     }
 
     class ButtonsPanel extends JPanel {
+
+        private ArrayList<JButton> butts;
+
+        public ButtonsPanel() {
+            butts = new ArrayList<JButton>();
+        }
+
         public void paintComponent(Graphics g) {
             g.setColor(bckgrndClr);
             g.fillRect(0, 0, this.getWidth(), this.getHeight());
         }
+
+        public void add(JButton butt) {
+            super.add(butt);
+            butts.add(butt);
+        }
+
+        public ArrayList<JButton> getButtons() {
+            return butts;
+        }
+
     }
 
 }
