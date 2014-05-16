@@ -1,9 +1,1 @@
-task intro(dependsOn: 'hello') << { 
-    println "I'm Gradle!"
-}
-
-task hello << {
-    println 'Hello world!'
-}
-
 ant.importBuild 'build.xml'
