@@ -46,7 +46,6 @@ public class EncoderGUI {
     JFrame frame;
     JPanel filePanel, fileNamePanel, centerPanel, musicPanel;
     JLabel fileNameLabel;
-    JProgressBar progBar;
     JTextArea fileTextArea;
     JButton encButt, decButt, chooseButt, openButt;
     RoundButton playButt, pauseButt;
@@ -55,9 +54,8 @@ public class EncoderGUI {
     File currFile, saveFile;
     Color bckgrndClr;
     String[] files;
-    String fileName, fileType, fileExt, fileText;
+    String fileName, fileType, fileText;
     ButtonsPanel buttons;
-    BufferedImage img;
     boolean firstTime;
     int state;
     int[] bytes;
@@ -71,7 +69,6 @@ public class EncoderGUI {
     public void go() {
         enc = new Encoder();
         bckgrndClr = new Color(176, 224, 230);
-        progBar = new JProgressBar(0, 100);
         frame = new JFrame();
         filePanel = new JPanel();
         centerPanel = new JPanel();
@@ -215,35 +212,56 @@ public class EncoderGUI {
      *  be opened, or encounter IOException while retrieving text.
      */
     private void fileChosen() {
-        // Need some thread to handle appearance / disappearance of progBar
-        progBar.setValue(0);
-        OpenFileTask task = new OpenFileTask();
-        frame.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-        task.start();
         try {
-            task.join();
-        } catch (InterruptedException e) {
-            popupErr("Error: thread was interrupted.");
-            fileType = "";
+            FileInputStream file = new FileInputStream(currFile);
+            ArrayList<Integer> byteArr = new ArrayList<Integer>();
+            int currByte = file.read();
+            while (currByte > -1) {
+                byteArr.add(currByte);
+                currByte = file.read();
+            }
+            bytes = new int[byteArr.size()];
+            byte[] realBytes = new byte[bytes.length];
+            for (int i = 0; i < byteArr.size(); i += 1) {
+                int val = byteArr.get(i);
+                bytes[i] = val;
+                realBytes[i] = (byte) val;
+            }
+            fileName = jFile.getName(currFile);
+            String[] nameParts = fileName.split("\\.");
+            fileType = nameParts[nameParts.length - 1];
+            fileNameLabel.setText(fileName);
+            centerPanel.removeAll();
+            centerPanel.revalidate();
+            centerPanel.repaint();
+            centerPanel.add(buttons);
+            BufferedImage img = ImageIO.read(currFile);
+            if (img != null) {
+                fileTypeImageFile(img);
+            } else {
+                fileText = new String(realBytes, "MacRoman");
+                String testText = officeDocText();
+                if (testText != null) {
+                    fileText = testText;
+                    fileTypeOfficeFile();
+                } else {
+                    try {
+                        control.open(currFile);
+                        fileTypeMusicFile();
+                    } catch (Exception e) {
+                        fileTypeUnknown();
+                    }
+                }
+            }
+            if (firstTime && Desktop.isDesktopSupported()) {
+                buttons.add(openButt);
+            }
+            firstTime = false;
+        } catch (FileNotFoundException f) {
+            popupErr("Error: file \"" + currFile + "\" could not be opened.");
+        } catch (IOException e) {
+            popupErr("Error while retrieving file text.");
         }
-        switch (fileType) {
-        case "image":
-            fileTypeImageFile();
-            break;
-        case "office":
-            fileTypeOfficeFile();
-            break;
-        case "music":
-            fileTypeMusicFile();
-            break;
-        case "unknown":
-            fileTypeUnknown();
-            break;
-        default:
-            popupErr("Error: file was not read correctly.");
-            break;
-        }
-        frame.getRootPane().setCursor(null);
     }
 
     /** Uses the Apache POI API to extract the text from a Microsoft Office file.
@@ -307,7 +325,7 @@ public class EncoderGUI {
         centerPanel.add(filePanel);
     }
 
-    private void fileTypeImageFile() {
+    private void fileTypeImageFile(BufferedImage img) {
         JLabel imgLabel = new JLabel(new ImageIcon(img));
         JScrollPane scroller = new JScrollPane(imgLabel);
         centerPanel.add(scroller);
@@ -350,67 +368,6 @@ public class EncoderGUI {
         }
 
         public void run() {
-            try {
-                FileInputStream file = new FileInputStream(currFile);
-                ArrayList<Integer> byteArr = new ArrayList<Integer>();
-                int currByte = file.read();
-                while (currByte > -1) {
-                    byteArr.add(currByte);
-                    currByte = file.read();
-                }
-                progBar.setValue(5);
-                bytes = new int[byteArr.size()];
-                byte[] realBytes = new byte[bytes.length];
-                for (int i = 0; i < byteArr.size(); i += 1) {
-                    int val = byteArr.get(i);
-                    bytes[i] = val;
-                    realBytes[i] = (byte) val;
-                }
-                progBar.setValue(10);
-                fileName = jFile.getName(currFile);
-                String[] nameParts = fileName.split("\\.");
-                fileExt = nameParts[nameParts.length - 1];
-                fileNameLabel.setText(fileName);
-                centerPanel.removeAll();
-                centerPanel.revalidate();
-                centerPanel.repaint();
-                centerPanel.add(buttons);
-                img = ImageIO.read(currFile);
-                if (img != null) {
-                    progBar.setValue(80);
-                    fileType = "image";
-                } else {
-                    progBar.setValue(15);
-                    fileText = new String(realBytes, "MacRoman");
-                    String testText = officeDocText();
-                    progBar.setValue(25);
-                    if (testText != null) {
-                        progBar.setValue(75);
-                        fileText = testText;
-                        fileType = "office";
-                    } else {
-                        progBar.setValue(35);
-                        try {
-                            control.open(currFile);
-                            progBar.setValue(75);
-                            fileType = "music";
-                        } catch (Exception e) {
-                            progBar.setValue(90);
-                            fileType = "unknown";
-                        }
-                    }
-                }
-                progBar.setValue(95);
-                if (firstTime && Desktop.isDesktopSupported()) {
-                    buttons.add(openButt);
-                }
-                firstTime = false;
-                progBar.setValue(100);
-            } catch (FileNotFoundException f) {
-                popupErr("Error: file \"" + currFile + "\" could not be opened.");
-            } catch (IOException e) {
-                popupErr("Error while retrieving file text.");
-            }
 
         }
 
@@ -450,7 +407,7 @@ public class EncoderGUI {
                 Desktop.getDesktop().open(currFile);
             } catch (IOException io) {
                 popupErr("Error: no default application for file type \"." +
-                         fileExt + "\"");
+                         fileType + "\"");
             } catch (NullPointerException nll) {
                 popupErr("Error: null file.");
             } catch (IllegalArgumentException ill) {
