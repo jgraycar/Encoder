@@ -1,7 +1,9 @@
+Encoder is an encryption/decryption software package developed by Joel Graycar in 2014.
+It utilizes modular arithmetic to transform the bytes of a file by a random amount.
 
-Compile and create jar/app/dmg using "ant" command
+Compile and create jar/app/dmg by using either Apache Ant or Gradle.
 
-Commands:
+Ant Commands:
 -    "ant jar" or just "ant" will create jar file in "dist/lib/Encoder-${DSTAMP}.jar" and
      "dist/lib/Encoder.jar"
 -    "ant compile" will create build directory and store *.classes there.
@@ -9,4 +11,6 @@ Commands:
 -    "ant clean" will delete build and dist directories.
 -    "ant bundle-app" will create the Encoder.app file.
 -    "ant dmg" will create the ENCODER disk image file.
+
+To build using Gradle, simply substitute "gradle" for "ant" and use any of the same commands.
 
