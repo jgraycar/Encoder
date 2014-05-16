@@ -26,6 +26,9 @@ import java.lang.StringBuilder;
 
 import java.util.ArrayList;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.ByteArrayInputStream;
@@ -243,7 +246,26 @@ public class EncoderGUI {
             popupErr("Error: file was not read correctly.");
             break;
         }
+        double len = currFile.length();
+        double kiloB = len / 1024;
+        double megaB = kiloB / 1024;
+        double gigaB = megaB / 1024;
+        String fileSize;
+        if (gigaB >= 1) {
+            fileSize = roundOff(gigaB) + " GB";
+        } else if (megaB >= 1) {
+            fileSize = roundOff(megaB) + " MB";
+        } else if (kiloB >= 1) {
+            fileSize = roundOff(kiloB) + " KB";
+        } else {
+            fileSize = len + " bytes";
+        }
+        fileNameLabel.setText(fileName + ": " + fileSize);
         frame.getRootPane().setCursor(null);
+    }
+
+    private BigDecimal roundOff(double d) {
+        return new BigDecimal(d).setScale(2, RoundingMode.HALF_UP);
     }
 
     /** Uses the Apache POI API to extract the text from a Microsoft Office file.
@@ -279,6 +301,7 @@ public class EncoderGUI {
      *          2 if could not write to saveFile.
      */
     private int transformText() {
+        frame.getRootPane().setCursor((Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)));
         int status = 0;
         int[] transformed = null;
         boolean worked = true;
@@ -299,6 +322,7 @@ public class EncoderGUI {
         } catch (IOException io) {
             status = 2;
         }
+        frame.getRootPane().setCursor(null);
         return status;
     }
 
@@ -370,7 +394,6 @@ public class EncoderGUI {
                 fileName = jFile.getName(currFile);
                 String[] nameParts = fileName.split("\\.");
                 fileExt = nameParts[nameParts.length - 1];
-                fileNameLabel.setText(fileName);
                 centerPanel.removeAll();
                 centerPanel.revalidate();
                 centerPanel.repaint();
