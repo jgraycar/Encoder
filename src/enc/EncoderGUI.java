@@ -52,8 +52,7 @@ public class EncoderGUI {
     JLabel fileNameLabel;
     JProgressBar progBar;
     JTextArea fileTextArea;
-    JButton encButt, decButt, chooseButt, openButt;
-    RoundButton playButt, pauseButt, colorButt;
+    JButton encButt, decButt, chooseButt, openButt, colorButt, playButt, pauseButt;
     JFileChooser jFile;
     FileDialog fileChooser;
     File currFile, saveFile;
@@ -92,12 +91,12 @@ public class EncoderGUI {
         openButt = new JButton("Open file");
         try {
             BufferedImage colorIcon =
-                ImageIO.read(new File("/Users/Joel/CompSci/Encoder/src/color.gif"));
+                ImageIO.read(EncoderGUI.class.getResource("/color.gif"));
             colorButt = new RoundButton(new ImageIcon(colorIcon));
             colorButt.setBorder(BorderFactory.createEmptyBorder());
             colorButt.setContentAreaFilled(false);
         } catch (IOException io) {
-            colorButt = new RoundButton("color");
+            colorButt = new JButton("Change color");
         }
         encButt.addActionListener(new EncryptButtonListener());
         decButt.addActionListener(new DecryptButtonListener());
@@ -129,12 +128,11 @@ public class EncoderGUI {
         BasicPlayer player = new BasicPlayer();
         control = (BasicController) player;
         musicPanel.setLayout(new BoxLayout(musicPanel, BoxLayout.X_AXIS));
-        //Box box = Box.createHorizontalBox();
         try {
             BufferedImage playIcon =
-                ImageIO.read(new File("/Users/Joel/CompSci/Encoder/src/play.gif"));
+                ImageIO.read(EncoderGUI.class.getResource("/play.png"));
             BufferedImage pauseIcon =
-                ImageIO.read(new File("/Users/Joel/CompSci/Encoder/src/pause.png"));
+                ImageIO.read(EncoderGUI.class.getResource("/pause.png"));
             playButt = new RoundButton(new ImageIcon(playIcon));
             pauseButt = new RoundButton(new ImageIcon(pauseIcon));
             playButt.setBorder(BorderFactory.createEmptyBorder());
@@ -144,8 +142,8 @@ public class EncoderGUI {
             playButt.setSize(50, 50);
             pauseButt.setSize(50, 50);
         } catch (IOException io) {
-            playButt = new RoundButton("Play");
-            pauseButt = new RoundButton("Pause");
+            playButt = new JButton("Play");
+            pauseButt = new JButton("Pause");
         }
         playButt.addActionListener(new PlayButtonListener());
         pauseButt.addActionListener(new PauseButtonListener());
@@ -153,11 +151,6 @@ public class EncoderGUI {
         pauseButt.setOpaque(true);
         playButt.setBackground(bckgrndClr);
         pauseButt.setBackground(bckgrndClr);
-        //box.add(playButt);
-        //box.add(pauseButt);
-        //box.setOpaque(true);
-        //box.setBackground(bckgrndClr);
-        //musicPanel.add(box);
         musicPanel.add(playButt);
         musicPanel.add(pauseButt);
 

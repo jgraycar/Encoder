@@ -55,18 +55,10 @@
                        jarfile="${dist}/lib/Encoder.jar">
       <classpath refid="build.classpath"/>
     </manifestclasspath>
-    <!-- Put everything in ${build} into Encoder-${DSTAMP}.jar file -->
-    <jar jarfile="${dist}/lib/${volname}-${DSTAMP}.jar"
-         basedir="${build}">
-      <manifest>
-        <attribute name="Main-Class" value="${Main-Class}"/>
-        <attribute name="Built-By" value="${builder}"/>
-        <attribute name="Class-Path" value="${jar.classpath}"/>
-      </manifest>
-    </jar>
     <!-- Put everything in ${build} into Encoder.jar file -->
-    <jar jarfile="${dist}/lib/${volname}.jar"
-         basedir="${build}">
+    <jar jarfile="${dist}/lib/${volname}.jar">
+      <fileset dir="${build}"/>
+      <fileset dir="${src}/resources"/>
       <manifest>
         <attribute name="Main-Class" value="${Main-Class}"/>
         <attribute name="Built-By" value="${builder}"/>
