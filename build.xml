@@ -55,7 +55,7 @@
                        jarfile="${dist}/lib/Encoder.jar">
       <classpath refid="build.classpath"/>
     </manifestclasspath>
-    <!-- Put everything in ${build} into Encoder.jar file -->
+    <!-- Put everything in ${build} and resources into Encoder.jar file -->
     <jar jarfile="${dist}/lib/${volname}.jar">
       <fileset dir="${build}"/>
       <fileset dir="${src}/resources"/>
@@ -73,7 +73,7 @@
 
   <target name="clean"
           description="clean up">
-    <!-- Delete the ${build} and ${dist} directory trees -->
+    <!-- Delete the ${build} and ${dist} directory trees, and dmg file -->
     <delete dir="${build}"/>
     <delete dir="${dist}"/>
     <delete file="${volname}.dmg"/>
@@ -97,7 +97,7 @@
             displayname="${volname}"
             identifier="enc.EncoderGUI"
             mainclassname="enc.EncoderGUI"
-            icon="src/encoder.icns">
+            icon="${src}/resources/encoder.icns">
             <runtime dir="${env.JAVA_HOME}"/>
             <classpath file="dist/lib/${volname}.jar" />
             <classpath dir="lib"/>

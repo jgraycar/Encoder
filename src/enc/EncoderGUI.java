@@ -49,17 +49,19 @@ public class EncoderGUI {
     JFrame frame;
     ColoredPanel filePanel, centerPanel, musicPanel;
     JPanel fileNamePanel;
+    JMenuBar menuBar;
+    JMenu fileMenu, actionMenu;
+    JMenuItem chooseItem, openItem, encryptItem, decryptItem;
     JLabel fileNameLabel;
     JProgressBar progBar;
     JTextArea fileTextArea;
-    JButton encButt, decButt, chooseButt, openButt, colorButt, playButt, pauseButt;
+    JButton playButt, pauseButt;
     JFileChooser jFile;
     FileDialog fileChooser;
     File currFile, saveFile;
     Color bckgrndClr;
     String[] files;
     String fileName, fileType, fileExt, fileText;
-    ButtonsPanel buttons;
     BufferedImage img;
     boolean firstTime;
     int state;
@@ -84,44 +86,39 @@ public class EncoderGUI {
         filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.Y_AXIS));
         frame.getContentPane().add(BorderLayout.CENTER, centerPanel);
 
-        // Set up enc/dec & choose/open buttons
-        encButt = new JButton("Encrypt");
-        decButt = new JButton("Decrypt");
-        chooseButt = new JButton("Choose file");
-        openButt = new JButton("Open file");
-        try {
-            BufferedImage colorIcon =
-                ImageIO.read(EncoderGUI.class.getResource("/color.gif"));
-            colorButt = new RoundButton(new ImageIcon(colorIcon));
-            colorButt.setBorder(BorderFactory.createEmptyBorder());
-            colorButt.setContentAreaFilled(false);
-        } catch (IOException io) {
-            colorButt = new JButton("Change color");
+        // Set up menu bar
+        if (System.getProperty("os.name").contains("Mac")) {
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
         }
-        encButt.addActionListener(new EncryptButtonListener());
-        decButt.addActionListener(new DecryptButtonListener());
-        chooseButt.addActionListener(new ChooseButtonListener());
-        openButt.addActionListener(new OpenButtonListener());
-        colorButt.addActionListener(new ColorButtonListener());
-        encButt.setOpaque(true);
-        decButt.setOpaque(true);
-        chooseButt.setOpaque(true);
-        openButt.setOpaque(true);
-        colorButt.setOpaque(true);
-        encButt.setBackground(bckgrndClr);
-        decButt.setBackground(bckgrndClr);
-        chooseButt.setBackground(bckgrndClr);
-        openButt.setBackground(bckgrndClr);
-        colorButt.setBackground(bckgrndClr);
-        buttons = new ButtonsPanel();
-        buttons.add(encButt);
-        buttons.add(decButt);
-        buttons.add(chooseButt);
-        buttons.add(openButt);
-        openButt.setVisible(false);
-        buttons.add(colorButt);
-        centerPanel.add(buttons);
-        centerPanel.add(filePanel);
+        int cmndKey = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+        menuBar = new JMenuBar();
+        fileMenu = new JMenu("File");
+        chooseItem = new JMenuItem("Open");
+        openItem = new JMenuItem("Open Externally");
+        chooseItem.addActionListener(new ChooseItemListener());
+        openItem.addActionListener(new OpenItemListener());
+        chooseItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
+                                                         cmndKey));
+        openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
+                                                         cmndKey));
+        menuBar.add(fileMenu);
+        fileMenu.add(chooseItem);
+        if (Desktop.isDesktopSupported()) {
+            fileMenu.add(openItem);
+        }
+        actionMenu = new JMenu("Convert");
+        menuBar.add(actionMenu);
+        encryptItem = new JMenuItem("Encrypt");
+        decryptItem = new JMenuItem("Decrypt");
+        encryptItem.addActionListener(new EncryptItemListener());
+        decryptItem.addActionListener(new DecryptItemListener());
+        encryptItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E,
+                                                         cmndKey));
+        decryptItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D,
+                                                         cmndKey));
+        actionMenu.add(encryptItem);
+        actionMenu.add(decryptItem);
+        frame.setJMenuBar(menuBar);
 
         // Set up music player
         musicPanel = new ColoredPanel();
@@ -191,6 +188,13 @@ public class EncoderGUI {
     /** Query user for desired file to save transformed text in. */
     private void queryName() {
         fileChooser.setMode(FileDialog.SAVE);
+        if (state == 0) {
+            fileChooser.setTitle("Save encrypted text");
+        } else if (state == 1) {
+            fileChooser.setTitle("Save decrypted text");
+        } else {
+            fileChooser.setTitle("");
+        }
         fileChooser.setVisible(true);
         File[] files = fileChooser.getFiles();
         if (files.length > 0) {
@@ -361,6 +365,7 @@ public class EncoderGUI {
                     BufferedImage img =
                         ImageIO.read(new ByteArrayInputStream(imageData));
                     JLabel imgLabel = new JLabel(new ImageIcon(img));
+                    centerPanel.add(Box.createVerticalGlue());
                     centerPanel.add(imgLabel);
                 }
             }
@@ -410,41 +415,44 @@ public class EncoderGUI {
                 centerPanel.removeAll();
                 centerPanel.revalidate();
                 centerPanel.repaint();
-                centerPanel.add(buttons);
                 img = ImageIO.read(currFile);
                 if (img != null) {
                     progBar.setValue(80);
                     fileType = "image";
                 } else {
-                    progBar.setValue(15);
-                    fileText = new String(realBytes, "MacRoman");
-                    String testText = officeDocText();
-                    progBar.setValue(25);
-                    if (testText != null) {
-                        progBar.setValue(75);
-                        fileText = testText;
-                        fileType = "office";
+                    if (state == 0) {
+                        progBar.setValue(15);
+                        fileText = new String(realBytes, "MacRoman");
+                        progBar.setValue(90);
+                        fileType = "unknown";
                     } else {
-                        progBar.setValue(35);
-                        if (fileExt.equals("mp3")) {
-                            try {
-                                control.open(currFile);
-                                progBar.setValue(75);
-                                fileType = "music";
-                            } catch (Exception e) {
+                        progBar.setValue(15);
+                        fileText = new String(realBytes, "MacRoman");
+                        String testText = officeDocText();
+                        progBar.setValue(25);
+                        if (testText != null) {
+                            progBar.setValue(75);
+                            fileText = testText;
+                            fileType = "office";
+                        } else {
+                            progBar.setValue(35);
+                            if (fileExt.equals("mp3")) {
+                                try {
+                                    control.open(currFile);
+                                    progBar.setValue(75);
+                                    fileType = "music";
+                                } catch (Exception e) {
+                                    progBar.setValue(90);
+                                    fileType = "unknown";
+                                }
+                            } else {
                                 progBar.setValue(90);
                                 fileType = "unknown";
                             }
-                        } else {
-                            progBar.setValue(90);
-                            fileType = "unknown";
                         }
                     }
                 }
                 progBar.setValue(95);
-                if (firstTime && Desktop.isDesktopSupported()) {
-                    openButt.setVisible(true);
-                }
                 firstTime = false;
                 progBar.setValue(100);
             } catch (FileNotFoundException f) {
@@ -459,9 +467,11 @@ public class EncoderGUI {
 
     // ---------------------------- Listeners -----------------------------
 
-    class ChooseButtonListener implements ActionListener {
+    class ChooseItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
+            state = -1;
             fileChooser.setMode(FileDialog.LOAD);
+            fileChooser.setTitle("Select a file to open");
             fileChooser.setVisible(true);
             File[] files = fileChooser.getFiles();
             if (files.length > 0) {
@@ -471,33 +481,69 @@ public class EncoderGUI {
         }
     }
 
-    class EncryptButtonListener implements ActionListener {
+    class EncryptItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            state = 0;
-            queryName();
+            if (currFile != null) {
+                state = 0;
+                queryName();
+            } else {
+                fileChooser.setMode(FileDialog.LOAD);
+                fileChooser.setTitle("Select a file to open");
+                fileChooser.setVisible(true);
+                File[] files = fileChooser.getFiles();
+                if (files.length > 0) {
+                    currFile = files[0];
+                    fileChosen();
+                    state = 0;
+                    queryName();
+                }
+            }
         }
     }
 
-    class DecryptButtonListener implements ActionListener {
+    class DecryptItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            state = 1;
-            queryName();
+            if (currFile != null) {
+                state = 1;
+                queryName();
+            }
         }
     }
 
-    class OpenButtonListener implements ActionListener {
+    class OpenItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
-            try {
-                Desktop.getDesktop().open(currFile);
-            } catch (IOException io) {
-                popupErr("Error: no default application for file type \"." +
-                         fileExt + "\"");
-            } catch (NullPointerException nll) {
-                popupErr("Error: null file.");
-            } catch (IllegalArgumentException ill) {
-                popupErr("Error: file not found.");
-            } catch (SecurityException sec) {
-                popupErr("Error: do not have permission to read file.");
+            if (currFile == null) {
+                fileChooser.setMode(FileDialog.LOAD);
+                fileChooser.setTitle("Select a file to open externally");
+                fileChooser.setVisible(true);
+                File[] files = fileChooser.getFiles();
+                if (files.length > 0) {
+                    try {
+                        Desktop.getDesktop().open(files[0]);
+                    } catch (IOException io) {
+                        popupErr("Error: no default application for file type \"." +
+                                 fileExt + "\"");
+                    } catch (NullPointerException nll) {
+                        popupErr("Error: null file.");
+                    } catch (IllegalArgumentException ill) {
+                        popupErr("Error: file not found.");
+                    } catch (SecurityException sec) {
+                        popupErr("Error: do not have permission to read file.");
+                    }
+                }
+            } else {
+                try {
+                    Desktop.getDesktop().open(currFile);
+                } catch (IOException io) {
+                    popupErr("Error: no default application for file type \"." +
+                             fileExt + "\"");
+                } catch (NullPointerException nll) {
+                    popupErr("Error: null file.");
+                } catch (IllegalArgumentException ill) {
+                    popupErr("Error: file not found.");
+                } catch (SecurityException sec) {
+                    popupErr("Error: do not have permission to read file.");
+                }
             }
         }
     }
@@ -519,21 +565,6 @@ public class EncoderGUI {
             } catch (BasicPlayerException p) {
                 p.printStackTrace();
             }
-        }
-    }
-
-    class ColorButtonListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            int r = (int) (Math.random() * 255);
-            int g = (int) (Math.random() * 255);
-            int b = (int) (Math.random() * 255);
-            bckgrndClr = new Color(r, g, b);
-            for (JButton button : buttons.getButtons()) {
-                button.setBackground(bckgrndClr);
-            }
-            playButt.setBackground(bckgrndClr);
-            pauseButt.setBackground(bckgrndClr);
-            frame.repaint();
         }
     }
 
