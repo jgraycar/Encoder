@@ -20,7 +20,8 @@
     </fileset>
   </path>
 
-  <target name="display-classpath">
+  <target name="display-classpath"
+          description="display classpath used in jar file generation">
     <!-- Write the classpath to the console. Helpful for debugging -->
     <!-- Create one line per classpath element-->
     <pathconvert pathsep="${line.separator}"
@@ -67,12 +68,13 @@
     </jar>
   </target>
 
-  <target name="run-jar" depends="jar">
+  <target name="run-jar" depends="jar"
+          description="creates and runs the distribution jar file">
     <java jar="${dist}/lib/${volname}.jar" fork="true"/>
   </target>
 
   <target name="clean"
-          description="clean up">
+          description="removes all non-source directories">
     <!-- Delete the ${build} and ${dist} directory trees, and dmg file -->
     <delete dir="${build}"/>
     <delete dir="${dist}"/>
@@ -88,23 +90,25 @@
   </target>
 
   <taskdef name="bundleapp"
-             classname="com.oracle.appbundler.AppBundlerTask"   
+             classname="com.oracle.appbundler.AppBundlerTask"
              classpath="lib/appbundler-1.0.jar" />
 
-  <target name="bundle-app" depends="sign-jar">
+  <target name="bundle-app" depends="sign-jar"
+          description="creates the Mac OS executable app file">
       <bundleapp outputdirectory="dist"
             name="${volname}"
             displayname="${volname}"
             identifier="enc.EncoderGUI"
             mainclassname="enc.EncoderGUI"
-            icon="${src}/resources/encoder.icns">
+            icon="${src}/resources/app_icon.icns">
             <runtime dir="${env.JAVA_HOME}"/>
             <classpath file="dist/lib/${volname}.jar" />
             <classpath dir="lib"/>
       </bundleapp>
   </target>
 
-  <target name="run-app" depends="bundle-app">
+  <target name="run-app" depends="bundle-app"
+          description="creates and runs the Mac OS executable app file">
     <exec executable="/usr/bin/open" os="Mac OS X" failonerror="true">
       <arg value="${dist}/${volname}.app"/>
     </exec>

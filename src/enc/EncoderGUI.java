@@ -38,20 +38,22 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 
 /**
- * @author Joel Graycar
+ *  @author Joel Graycar
+ *  @email jgraycar@berkeley.edu
  */
 
 public class EncoderGUI {
 
     Encoder enc;
     JFrame frame;
-    ColoredPanel filePanel, centerPanel, musicPanel;
+    JPanel filePanel, centerPanel, musicPanel;
     JPanel fileNamePanel;
     JMenuBar menuBar;
     JMenu fileMenu, actionMenu;
-    JMenuItem chooseItem, openItem, encryptItem, decryptItem;
+    JMenuItem chooseItem, openItem, encryptItem, decryptItem, saveItem;
     JLabel fileNameLabel;
     JProgressBar progBar;
     JTextArea fileTextArea;
@@ -61,11 +63,11 @@ public class EncoderGUI {
     File currFile, saveFile;
     Color bckgrndClr;
     String[] files;
-    String fileName, fileType, fileExt, fileText;
+    String fileName, fileType, fileExt, fileText, fileSize;
+    int[] fileBytes;
+    int state;
     BufferedImage img;
     boolean firstTime;
-    int state;
-    int[] bytes;
     BasicController control;
 
     public static void main(String... args) {
@@ -75,7 +77,7 @@ public class EncoderGUI {
 
     public void go() {
         enc = new Encoder();
-        bckgrndClr = new Color(176, 224, 230);
+        bckgrndClr = new Color(211, 211, 211);
         progBar = new JProgressBar(0, 100);
         frame = new JFrame();
         filePanel = new ColoredPanel();
@@ -95,13 +97,20 @@ public class EncoderGUI {
         fileMenu = new JMenu("File");
         chooseItem = new JMenuItem("Open");
         openItem = new JMenuItem("Open Externally");
+        saveItem = new JMenuItem("Save As...");
         chooseItem.addActionListener(new ChooseItemListener());
         openItem.addActionListener(new OpenItemListener());
-        chooseItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
+        saveItem.addActionListener(new SaveItemListener());
+        chooseItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
                                                          cmndKey));
         openItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,
-                                                         cmndKey));
+                                                       InputEvent.SHIFT_MASK |
+                                                       cmndKey));
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+                                                       cmndKey));
+        saveItem.setEnabled(false);
         menuBar.add(fileMenu);
+        fileMenu.add(saveItem);
         fileMenu.add(chooseItem);
         if (Desktop.isDesktopSupported()) {
             fileMenu.add(openItem);
@@ -181,27 +190,11 @@ public class EncoderGUI {
     }
 
     private void popupErr(String msg) {
+        Toolkit.getDefaultToolkit().beep();
         JOptionPane.showMessageDialog(null, msg, "Error",
                                       JOptionPane.ERROR_MESSAGE);
     }
 
-    /** Query user for desired file to save transformed text in. */
-    private void queryName() {
-        fileChooser.setMode(FileDialog.SAVE);
-        if (state == 0) {
-            fileChooser.setTitle("Save encrypted text");
-        } else if (state == 1) {
-            fileChooser.setTitle("Save decrypted text");
-        } else {
-            fileChooser.setTitle("");
-        }
-        fileChooser.setVisible(true);
-        File[] files = fileChooser.getFiles();
-        if (files.length > 0) {
-            saveFile = files[0];
-            doAction();
-        }
-    }
 
     /** Handle the implementation of the encrypt/decrypt action.
      *  state = 1 means decrypt, 0 means encrypt.
@@ -216,69 +209,64 @@ public class EncoderGUI {
         }
         int status = transformText();
         if (status == 1) {
-            popupErr("Error: cannot decrypt; file \"" +
-                     fileName + "\" is not encrypted.");
+            popupErr("File \"" + fileName + "\" is not encrypted.");
         } else if (status == 2) {
-            popupErr("Error: encountered IOException.");
+            popupErr("Encountered IOException.");
         } else if (status == 0) {
             popup("\"" + fileName + tail.toString());
-            currFile = saveFile;
-            fileChosen();
+            updateDisplay();
         }
     }
 
-    /** Stores the bytes of currFile in int[] bytes, sets fileName and fileType,
-     *  sets fileNameLabel and fileText. Displays popup message if file cannot
-     *  be opened, or encounter IOException while retrieving text.
-     */
-    private void fileChosen() {
+    private void updateDisplay() {
         // Need some thread to handle appearance / disappearance of progBar
+        
         try {
             control.stop();
         } catch (BasicPlayerException b) {}
         progBar.setValue(0);
-        OpenFileTask task = new OpenFileTask();
+        OpenFileTask task = new OpenFileTask(fileBytes);
         frame.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         task.start();
         try {
             task.join();
+            switch (fileType) {
+            case "image":
+                fileTypeImageFile();
+                break;
+            case "office":
+                fileTypeOfficeFile();
+                break;
+            case "music":
+                fileTypeMusicFile();
+                break;
+            case "unknown":
+                fileTypeUnknown();
+                break;
+            default:
+                popupErr("Error: file was not read correctly.");
+                break;
+            }
+            double len = fileBytes.length;
+            double kiloB = len / 1024;
+            double megaB = kiloB / 1024;
+            double gigaB = megaB / 1024;
+            if (gigaB >= 1) {
+                fileSize = roundOff(gigaB) + " GB";
+            } else if (megaB >= 1) {
+                fileSize = roundOff(megaB) + " MB";
+            } else if (kiloB >= 1) {
+                fileSize = roundOff(kiloB) + " KB";
+            } else {
+                fileSize = len + " bytes";
+            }
+            fileNameLabel.setText(fileName + ": " + fileSize);
+            frame.getRootPane().setCursor(null);
+            saveItem.setEnabled(true);
         } catch (InterruptedException e) {
-            popupErr("Error: thread was interrupted.");
+            popupErr("Thread was interrupted.");
             fileType = "";
         }
-        switch (fileType) {
-        case "image":
-            fileTypeImageFile();
-            break;
-        case "office":
-            fileTypeOfficeFile();
-            break;
-        case "music":
-            fileTypeMusicFile();
-            break;
-        case "unknown":
-            fileTypeUnknown();
-            break;
-        default:
-            popupErr("Error: file was not read correctly.");
-            break;
-        }
-        double len = currFile.length();
-        double kiloB = len / 1024;
-        double megaB = kiloB / 1024;
-        double gigaB = megaB / 1024;
-        String fileSize;
-        if (gigaB >= 1) {
-            fileSize = roundOff(gigaB) + " GB";
-        } else if (megaB >= 1) {
-            fileSize = roundOff(megaB) + " MB";
-        } else if (kiloB >= 1) {
-            fileSize = roundOff(kiloB) + " KB";
-        } else {
-            fileSize = len + " bytes";
-        }
-        fileNameLabel.setText(fileName + ": " + fileSize);
-        frame.getRootPane().setCursor(null);
     }
 
     private BigDecimal roundOff(double d) {
@@ -320,26 +308,31 @@ public class EncoderGUI {
     private int transformText() {
         frame.getRootPane().setCursor((Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)));
         int status = 0;
-        int[] transformed = null;
-        boolean worked = true;
         if (state == 1) {
-            transformed = enc.decode(bytes);
+            int[] transformed = enc.decode(fileBytes);
             if (transformed == null) {
-                return 1;
+                status = 1;
+            } else {
+                fileBytes = transformed;
             }
         } else {
-            transformed = enc.encode(bytes);
+            fileBytes = enc.encode(fileBytes);
         }
+        frame.getRootPane().setCursor(null);
+        return status;
+    }
+
+    private int saveFile() {
+        int status = 0;
         try {
             FileOutputStream fileW = new FileOutputStream(saveFile);
-            for (int b : transformed) {
+            for (int b : fileBytes) {
                 fileW.write(b);
             }
             fileW.close();
         } catch (IOException io) {
             status = 2;
         }
-        frame.getRootPane().setCursor(null);
         return status;
     }
 
@@ -387,27 +380,18 @@ public class EncoderGUI {
 
     private class OpenFileTask extends Thread {
 
-        public OpenFileTask() {
+        private byte[] realBytes;
 
+        public OpenFileTask(int[] newBytes) {
+            fileBytes = newBytes;
+            this.realBytes = new byte[newBytes.length];
+            for (int i = 0; i < newBytes.length; i += 1) {
+                this.realBytes[i] = (byte) newBytes[i];
+            }
         }
 
         public void run() {
             try {
-                FileInputStream file = new FileInputStream(currFile);
-                ArrayList<Integer> byteArr = new ArrayList<Integer>();
-                int currByte = file.read();
-                while (currByte > -1) {
-                    byteArr.add(currByte);
-                    currByte = file.read();
-                }
-                progBar.setValue(5);
-                bytes = new int[byteArr.size()];
-                byte[] realBytes = new byte[bytes.length];
-                for (int i = 0; i < byteArr.size(); i += 1) {
-                    int val = byteArr.get(i);
-                    bytes[i] = val;
-                    realBytes[i] = (byte) val;
-                }
                 progBar.setValue(10);
                 fileName = jFile.getName(currFile);
                 String[] nameParts = fileName.split("\\.");
@@ -415,7 +399,7 @@ public class EncoderGUI {
                 centerPanel.removeAll();
                 centerPanel.revalidate();
                 centerPanel.repaint();
-                img = ImageIO.read(currFile);
+                img = ImageIO.read(new ByteArrayInputStream(realBytes));
                 if (img != null) {
                     progBar.setValue(80);
                     fileType = "image";
@@ -427,7 +411,11 @@ public class EncoderGUI {
                         fileType = "unknown";
                     } else {
                         progBar.setValue(15);
-                        fileText = new String(realBytes, "MacRoman");
+                        try {
+                            fileText = new String(realBytes, "MacRoman");
+                        } catch (UnsupportedEncodingException u) {
+                            fileText = new String(realBytes, "UTF8");
+                        }
                         String testText = officeDocText();
                         progBar.setValue(25);
                         if (testText != null) {
@@ -452,20 +440,36 @@ public class EncoderGUI {
                         }
                     }
                 }
-                progBar.setValue(95);
-                firstTime = false;
-                progBar.setValue(100);
-            } catch (FileNotFoundException f) {
-                popupErr("Error: file \"" + currFile + "\" could not be opened.");
-            } catch (IOException e) {
-                popupErr("Error while retrieving file text.");
+            } catch (IOException io) {
+                popupErr("Encountered IOException while updating UI");
             }
-
-        }
-
+            progBar.setValue(95);
+            firstTime = false;
+            progBar.setValue(100);
+	}
     }
 
     // ---------------------------- Listeners -----------------------------
+
+    class SaveItemListener implements ActionListener {
+        public void actionPerformed(ActionEvent event) {
+            fileChooser.setMode(FileDialog.SAVE);
+            fileChooser.setTitle("Save text as...");
+            fileChooser.setVisible(true);
+            File[] files = fileChooser.getFiles();
+            if (files.length > 0) {
+                saveFile = files[0];
+                int status = saveFile();
+                if (status != 0) {
+                    popupErr("Could not save file.");
+                } else {
+                    currFile = saveFile;
+                    fileName = jFile.getName(currFile);
+                    fileNameLabel.setText(fileName + ": " + fileSize);
+                }
+            }
+        }
+    }
 
     class ChooseItemListener implements ActionListener {
         public void actionPerformed(ActionEvent event) {
@@ -476,7 +480,26 @@ public class EncoderGUI {
             File[] files = fileChooser.getFiles();
             if (files.length > 0) {
                 currFile = files[0];
-                fileChosen();
+                try {
+                    FileInputStream file = new FileInputStream(currFile);
+                    ArrayList<Integer> byteArr = new ArrayList<Integer>();
+                    int currByte = file.read();
+                    while (currByte > -1) {
+                        byteArr.add(currByte);
+                        currByte = file.read();
+                    }
+                    progBar.setValue(5);
+                    fileBytes = new int[byteArr.size()];
+                    for (int i = 0; i < byteArr.size(); i += 1) {
+                        int val = byteArr.get(i);
+                        fileBytes[i] = val;
+                    }
+                    updateDisplay();
+                } catch (FileNotFoundException f) {
+                    popupErr("File \"" + currFile + "\" could not be opened.");
+                } catch (IOException io) {
+                    popupErr("While retrieving file text.");
+                }
             }
         }
     }
@@ -485,7 +508,8 @@ public class EncoderGUI {
         public void actionPerformed(ActionEvent event) {
             if (currFile != null) {
                 state = 0;
-                queryName();
+                doAction();
+                updateDisplay();
             } else {
                 fileChooser.setMode(FileDialog.LOAD);
                 fileChooser.setTitle("Select a file to open");
@@ -493,9 +517,9 @@ public class EncoderGUI {
                 File[] files = fileChooser.getFiles();
                 if (files.length > 0) {
                     currFile = files[0];
-                    fileChosen();
                     state = 0;
-                    queryName();
+                    doAction();
+                    updateDisplay();
                 }
             }
         }
@@ -505,7 +529,8 @@ public class EncoderGUI {
         public void actionPerformed(ActionEvent event) {
             if (currFile != null) {
                 state = 1;
-                queryName();
+                doAction();
+                updateDisplay();
             }
         }
     }
@@ -535,14 +560,14 @@ public class EncoderGUI {
                 try {
                     Desktop.getDesktop().open(currFile);
                 } catch (IOException io) {
-                    popupErr("Error: no default application for file type \"." +
+                    popupErr("No default application for file type \"." +
                              fileExt + "\"");
                 } catch (NullPointerException nll) {
-                    popupErr("Error: null file.");
+                    popupErr("Null file.");
                 } catch (IllegalArgumentException ill) {
-                    popupErr("Error: file not found.");
+                    popupErr("File not found.");
                 } catch (SecurityException sec) {
-                    popupErr("Error: do not have permission to read file.");
+                    popupErr("Do not have permission to read file.");
                 }
             }
         }
@@ -575,30 +600,6 @@ public class EncoderGUI {
             g.setColor(bckgrndClr);
             g.fillRect(0, 0, this.getWidth(), this.getHeight());
         }
-    }
-
-    class ButtonsPanel extends JPanel {
-
-        private ArrayList<JButton> butts;
-
-        public ButtonsPanel() {
-            butts = new ArrayList<JButton>();
-        }
-
-        public void paintComponent(Graphics g) {
-            g.setColor(bckgrndClr);
-            g.fillRect(0, 0, this.getWidth(), this.getHeight());
-        }
-
-        public void add(JButton butt) {
-            super.add(butt);
-            butts.add(butt);
-        }
-
-        public ArrayList<JButton> getButtons() {
-            return butts;
-        }
-
     }
 
 }
