@@ -5,13 +5,13 @@
   <property name="src" location="src"/>
   <property name="build" location="build"/>
   <property name="dist" location="dist"/>
-  <property name="keystore" location="/Users/Joel/.keystore"/>
   <property name="key-alias" value="EncoderKey"/>
   <property name="store-pass" value="bibbles"/>
   <property name="Main-Class" value="enc.EncoderGUI"/>
   <property name="builder" value="Joel Graycar"/>
   <property name="volname" value="Encoder"/>
   <property environment="env"/>
+  <property name="keystore" location="${env.HOME}/.keystore"/>
 
   <path id="build.classpath">
     <fileset dir="lib">
@@ -19,6 +19,21 @@
       <exclude name="**/appbundler*"/>
     </fileset>
   </path>
+
+  <pathconvert property="mf.classpath" pathsep=" ">
+    <path refid="build.classpath"/>
+    <mapper>
+      <chainedmapper>
+	<flattenmapper/>
+	<globmapper from="*.jar" to="lib/*.jar"/>
+      </chainedmapper>
+    </mapper>
+  </pathconvert>
+
+  <target name="display-mf">
+    <echo message="mf.classpath:"/>
+    <echo message="${mf.classpath}"/>
+  </target>
 
   <target name="display-classpath"
           description="display classpath used in jar file generation">
@@ -28,8 +43,8 @@
                  property="echo.classpath"
                  refid="build.classpath"/>
     <!-- Write the result to the console -->
-    <echo message="build.classpath:" />
-    <echo message="${echo.classpath}" />
+    <echo message="build.classpath:"/>
+    <echo message="${echo.classpath}"/>
   </target>
 
   <target name="init">
@@ -40,12 +55,28 @@
   </target>
 
   <target name="compile" depends="init"
-          description="compile source" >
+          description="compile source">
     <!-- Compile java code from ${src} into ${build} -->
     <javac includeantruntime="false" srcdir="${src}" destdir="${build}"
            classpathref="build.classpath"/>
   </target>
 
+  <target name="test" depends="compile"
+          description="generate the distribution jar file" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}/lib"/>
+    <!-- Put everything in ${build} and resources into Encoder.jar file -->
+    <jar jarfile="${dist}/lib/${volname}.jar">
+      <fileset dir="${build}"/>
+      <fileset dir="${src}/resources"/>
+      <fileset dir="." includes="lib/**/**.jar"/>
+      <manifest>
+        <attribute name="Main-Class" value="${Main-Class}"/>
+        <attribute name="Built-By" value="${builder}"/>
+        <attribute name="Class-Path" value="${mf.classpath}"/>
+      </manifest>
+    </jar>
+  </target>
 
   <target name="jar" depends="compile"
           description="generate the distribution jar file" >
@@ -93,7 +124,7 @@
              classname="com.oracle.appbundler.AppBundlerTask"
              classpath="lib/appbundler-1.0.jar" />
 
-  <target name="bundle-app" depends="sign-jar"
+  <target name="bundle-app" depends="jar"
           description="creates the Mac OS executable app file">
       <bundleapp outputdirectory="dist"
             name="${volname}"
