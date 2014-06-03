@@ -107,6 +107,7 @@ public class EncoderGUI {
                                                        InputEvent.SHIFT_MASK |
                                                        cmndKey));
         saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+                                                       InputEvent.SHIFT_MASK |
                                                        cmndKey));
         saveItem.setEnabled(false);
         menuBar.add(fileMenu);
@@ -214,15 +215,11 @@ public class EncoderGUI {
             popupErr("Encountered IOException.");
         } else if (status == 0) {
             popup("\"" + fileName + tail.toString());
-            if (state == 0) {
-                updateDisplay(true);
-            } else {
-                updateDisplay(false);
-            }
+            updateDisplay();
         }
     }
 
-    private void updateDisplay(boolean encrypted) {
+    private void updateDisplay() {
         // Need some thread to handle appearance / disappearance of progBar
         centerPanel.removeAll();
         centerPanel.revalidate();
@@ -230,36 +227,32 @@ public class EncoderGUI {
         try {
             control.stop();
         } catch (BasicPlayerException b) {}
-        if (encrypted) {
-            fileTypeUnknown();
-        } else {
-            progBar.setValue(0);
-            OpenFileTask task = new OpenFileTask(fileBytes);
-            frame.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            task.start();
-            try {
-                task.join();
-                switch (fileType) {
-                case "image":
-                    fileTypeImageFile();
-                    break;
-                case "office":
-                    fileTypeOfficeFile();
-                    break;
-                case "music":
-                    fileTypeMusicFile();
-                    break;
-                case "unknown":
-                    fileTypeUnknown();
-                    break;
-                default:
-                    popupErr("Error: file was not read correctly.");
-                    break;
-                }
-            } catch (InterruptedException e) {
-                popupErr("Thread was interrupted.");
-                fileType = "";
+        progBar.setValue(0);
+        OpenFileTask task = new OpenFileTask(fileBytes);
+        frame.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        task.start();
+        try {
+            task.join();
+            switch (fileType) {
+            case "image":
+                fileTypeImageFile();
+                break;
+            case "office":
+                fileTypeOfficeFile();
+                break;
+            case "music":
+                fileTypeMusicFile();
+                break;
+            case "unknown":
+                fileTypeUnknown();
+                break;
+            default:
+                popupErr("Error: file was not read correctly.");
+                break;
             }
+        } catch (InterruptedException e) {
+            popupErr("Thread was interrupted.");
+            fileType = "";
         }
         double len = fileBytes.length;
         double kiloB = len / 1024;
@@ -501,7 +494,7 @@ public class EncoderGUI {
                         int val = byteArr.get(i);
                         fileBytes[i] = val;
                     }
-                    updateDisplay(false);
+                    updateDisplay();
                 } catch (FileNotFoundException f) {
                     popupErr("File \"" + currFile + "\" could not be opened.");
                 } catch (IOException io) {

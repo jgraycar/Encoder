@@ -20,21 +20,6 @@
     </fileset>
   </path>
 
-  <pathconvert property="mf.classpath" pathsep=" ">
-    <path refid="build.classpath"/>
-    <mapper>
-      <chainedmapper>
-	<flattenmapper/>
-	<globmapper from="*.jar" to="lib/*.jar"/>
-      </chainedmapper>
-    </mapper>
-  </pathconvert>
-
-  <target name="display-mf">
-    <echo message="mf.classpath:"/>
-    <echo message="${mf.classpath}"/>
-  </target>
-
   <target name="display-classpath"
           description="display classpath used in jar file generation">
     <!-- Write the classpath to the console. Helpful for debugging -->
@@ -61,23 +46,6 @@
            classpathref="build.classpath"/>
   </target>
 
-  <target name="test" depends="compile"
-          description="generate the distribution jar file" >
-    <!-- Create the distribution directory -->
-    <mkdir dir="${dist}/lib"/>
-    <!-- Put everything in ${build} and resources into Encoder.jar file -->
-    <jar jarfile="${dist}/lib/${volname}.jar">
-      <fileset dir="${build}"/>
-      <fileset dir="${src}/resources"/>
-      <fileset dir="." includes="lib/**/**.jar"/>
-      <manifest>
-        <attribute name="Main-Class" value="${Main-Class}"/>
-        <attribute name="Built-By" value="${builder}"/>
-        <attribute name="Class-Path" value="${mf.classpath}"/>
-      </manifest>
-    </jar>
-  </target>
-
   <target name="jar" depends="compile"
           description="generate the distribution jar file" >
     <!-- Create the distribution directory -->
@@ -91,6 +59,7 @@
     <jar jarfile="${dist}/lib/${volname}.jar">
       <fileset dir="${build}"/>
       <fileset dir="${src}/resources"/>
+      <zipgroupfileset dir="lib" includes="*.jar"/>
       <manifest>
         <attribute name="Main-Class" value="${Main-Class}"/>
         <attribute name="Built-By" value="${builder}"/>
@@ -134,7 +103,6 @@
             icon="${src}/resources/app_icon.icns">
             <runtime dir="${env.JAVA_HOME}"/>
             <classpath file="dist/lib/${volname}.jar" />
-            <classpath dir="lib"/>
       </bundleapp>
   </target>
 
