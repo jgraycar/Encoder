@@ -93,6 +93,19 @@
              classname="com.oracle.appbundler.AppBundlerTask"
              classpath="lib/appbundler-1.0.jar" />
 
+  <target name="bundle-dist-app" depends="jar"
+          description="creates Mac OS executable app file with jdk7 bundled in">
+      <bundleapp outputdirectory="dist"
+            name="${volname}"
+            displayname="${volname}"
+            identifier="enc.EncoderGUI"
+            mainclassname="enc.EncoderGUI"
+            icon="${src}/resources/app_icon.icns">
+            <runtime dir="${env.JAVA_HOME}"/>
+            <classpath file="dist/lib/${volname}.jar" />
+      </bundleapp>
+  </target>
+
   <target name="bundle-app" depends="jar"
           description="creates the Mac OS executable app file">
       <bundleapp outputdirectory="dist"
@@ -101,7 +114,6 @@
             identifier="enc.EncoderGUI"
             mainclassname="enc.EncoderGUI"
             icon="${src}/resources/app_icon.icns">
-            <runtime dir="${env.JAVA_HOME}"/>
             <classpath file="dist/lib/${volname}.jar" />
       </bundleapp>
   </target>
