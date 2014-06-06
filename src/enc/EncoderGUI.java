@@ -196,7 +196,6 @@ public class EncoderGUI {
                                       JOptionPane.ERROR_MESSAGE);
     }
 
-
     /** Handle the implementation of the encrypt/decrypt action.
      *  state = 1 means decrypt, 0 means encrypt.
      *  State is set by the encrypt/decrypt buttons. */
@@ -367,7 +366,6 @@ public class EncoderGUI {
         }
         return str.toString();
     }
-
 
     private int saveFile() {
         int status = 0;
