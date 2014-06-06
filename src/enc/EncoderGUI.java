@@ -219,6 +219,29 @@ public class EncoderGUI {
         }
     }
 
+    /** Do the work of encrypting/decrypting text. 
+     *  int[] bytes is the bytes of the current file, as found by fileChosen().
+     *  @return 0 if text successfully transformed and saved,
+     *          1 if op is decode and text not encrypted,
+     *          2 if could not write to saveFile.
+     */
+    private int transformText() {
+        frame.getRootPane().setCursor((Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)));
+        int status = 0;
+        int[] transformed;
+        if (state == 1) {
+            transformed = enc.decode(fileBytes);
+            if (transformed == null) {
+                return 1;
+            }
+        } else {
+            transformed = enc.encode(fileBytes);
+        }
+        fileBytes = transformed;
+        frame.getRootPane().setCursor(null);
+        return status;
+    }
+
     private void updateDisplay() {
         // Need some thread to handle appearance / disappearance of progBar
         centerPanel.removeAll();
@@ -289,43 +312,6 @@ public class EncoderGUI {
         return str.toString();
     }
 
-    /** Do the work of encrypting/decrypting text. 
-     *  int[] bytes is the bytes of the current file, as found by fileChosen().
-     *  @return 0 if text successfully transformed and saved,
-     *          1 if op is decode and text not encrypted,
-     *          2 if could not write to saveFile.
-     */
-    private int transformText() {
-        frame.getRootPane().setCursor((Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)));
-        int status = 0;
-        int[] transformed;
-        if (state == 1) {
-            transformed = enc.decode(fileBytes);
-            if (transformed == null) {
-                return 1;
-            }
-        } else {
-            transformed = enc.encode(fileBytes);
-        }
-        fileBytes = transformed;
-        frame.getRootPane().setCursor(null);
-        return status;
-    }
-
-    private int saveFile() {
-        int status = 0;
-        try {
-            FileOutputStream fileW = new FileOutputStream(saveFile);
-            for (int b : fileBytes) {
-                fileW.write(b);
-            }
-            fileW.close();
-        } catch (IOException io) {
-            status = 2;
-        }
-        return status;
-    }
-
     private void fileTypeOfficeFile() {
         fileTextArea.setText(fileText);
         centerPanel.add(filePanel);
@@ -381,6 +367,23 @@ public class EncoderGUI {
         }
         return str.toString();
     }
+
+
+    private int saveFile() {
+        int status = 0;
+        try {
+            FileOutputStream fileW = new FileOutputStream(saveFile);
+            for (int b : fileBytes) {
+                fileW.write(b);
+            }
+            fileW.close();
+        } catch (IOException io) {
+            status = 2;
+        }
+        return status;
+    }
+
+    // --------------------------- Threads --------------------------------
 
     private class OpenFileTask extends Thread {
 
