@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project name="Encoder" default = "bundle-app" basedir=".">
   <description>
     Build file for EncoderGUI
@@ -73,14 +74,6 @@
     <java jar="${dist}/lib/${volname}.jar" fork="true"/>
   </target>
 
-  <target name="clean"
-          description="removes all non-source directories">
-    <!-- Delete the ${build} and ${dist} directory trees, and dmg file -->
-    <delete dir="${build}"/>
-    <delete dir="${dist}"/>
-    <delete file="${volname}.dmg"/>
-  </target>
-
   <target name="sign-jar" depends="jar"
           description="sign jar file using jarsigner tool.">
     <signjar jar="${dist}/lib/${volname}.jar"
@@ -93,27 +86,15 @@
              classname="com.oracle.appbundler.AppBundlerTask"
              classpath="lib/appbundler-1.0.jar" />
 
-  <target name="bundle-dist-app" depends="jar"
-          description="creates Mac OS executable app file with jdk7 bundled in">
-      <bundleapp outputdirectory="dist"
-            name="${volname}"
-            displayname="${volname}"
-            identifier="enc.EncoderGUI"
-            mainclassname="enc.EncoderGUI"
-            icon="${src}/resources/app_icon.icns">
-            <runtime dir="${env.JAVA_HOME}"/>
-            <classpath file="dist/lib/${volname}.jar" />
-      </bundleapp>
-  </target>
-
   <target name="bundle-app" depends="jar"
-          description="creates the Mac OS executable app file">
+          description="creates Mac OS executable app file with jre bundled in">
       <bundleapp outputdirectory="dist"
             name="${volname}"
             displayname="${volname}"
             identifier="enc.EncoderGUI"
             mainclassname="enc.EncoderGUI"
             icon="${src}/resources/app_icon.icns">
+            <runtime dir="${env.JRE_HOME}"/>
             <classpath file="dist/lib/${volname}.jar" />
       </bundleapp>
   </target>
@@ -138,6 +119,14 @@
       <arg value="${volname}"/>
       <arg value="./${volname}"/>
     </exec>
+  </target>
+
+  <target name="clean"
+          description="removes all non-source directories">
+    <!-- Delete the ${build} and ${dist} directory trees, and dmg file -->
+    <delete dir="${build}"/>
+    <delete dir="${dist}"/>
+    <delete file="${volname}.dmg"/>
   </target>
 
 </project>

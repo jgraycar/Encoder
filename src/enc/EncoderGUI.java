@@ -276,19 +276,6 @@ public class EncoderGUI {
         return new BigDecimal(d).setScale(2, RoundingMode.HALF_UP);
     }
 
-    /** Uses the Apache POI API to extract the text from a Microsoft Office file.
-     *  If currFile is not of any recognized Office format, will return null. */
-    private String officeDocText() {
-        StringBuilder str = new StringBuilder();
-        try {
-            POITextExtractor extractor =
-                ExtractorFactory.createExtractor(currFile);
-            str.append(reformat(extractor.getText()));
-        } catch (Exception e) {
-            return null;
-        }
-        return str.toString();
-    }
     /** Adds an extra newline between each paragraph of TEXT.
      *  @param text is the output of extractor.getText().
      *  @return returns TEXT with an extra newline after each paragraph.
@@ -311,16 +298,16 @@ public class EncoderGUI {
     private int transformText() {
         frame.getRootPane().setCursor((Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)));
         int status = 0;
+        int[] transformed;
         if (state == 1) {
-            int[] transformed = enc.decode(fileBytes);
+            transformed = enc.decode(fileBytes);
             if (transformed == null) {
-                status = 1;
-            } else {
-                fileBytes = transformed;
+                return 1;
             }
         } else {
-            fileBytes = enc.encode(fileBytes);
+            transformed = enc.encode(fileBytes);
         }
+        fileBytes = transformed;
         frame.getRootPane().setCursor(null);
         return status;
     }
@@ -381,6 +368,20 @@ public class EncoderGUI {
         centerPanel.add(filePanel);
     }
 
+    /** Uses the Apache POI API to extract the text from a Microsoft Office file.
+     *  If currFile is not of any recognized Office format, will return null. */
+    private String officeDocText(ByteArrayInputStream bStream) {
+        StringBuilder str = new StringBuilder();
+        try {
+            POITextExtractor extractor =
+                ExtractorFactory.createExtractor(bStream);
+            str.append(reformat(extractor.getText()));
+        } catch (Exception e) {
+            return null;
+        }
+        return str.toString();
+    }
+
     private class OpenFileTask extends Thread {
 
         private byte[] realBytes;
@@ -400,23 +401,22 @@ public class EncoderGUI {
                 String[] nameParts = fileName.split("\\.");
                 fileExt = nameParts[nameParts.length - 1];
                 img = ImageIO.read(new ByteArrayInputStream(realBytes));
+                try {
+                    fileText = new String(realBytes, "MacRoman");
+                } catch (UnsupportedEncodingException u) {
+                    fileText = new String(realBytes, "UTF8");
+                }
                 if (img != null) {
                     progBar.setValue(80);
                     fileType = "image";
                 } else {
                     if (state == 0) {
                         progBar.setValue(15);
-                        fileText = new String(realBytes, "MacRoman");
                         progBar.setValue(90);
                         fileType = "unknown";
                     } else {
                         progBar.setValue(15);
-                        try {
-                            fileText = new String(realBytes, "MacRoman");
-                        } catch (UnsupportedEncodingException u) {
-                            fileText = new String(realBytes, "UTF8");
-                        }
-                        String testText = officeDocText();
+                        String testText = officeDocText(new ByteArrayInputStream(realBytes));
                         progBar.setValue(25);
                         if (testText != null) {
                             progBar.setValue(75);
@@ -466,6 +466,7 @@ public class EncoderGUI {
                     currFile = saveFile;
                     fileName = jFile.getName(currFile);
                     fileNameLabel.setText(fileName + ": " + fileSize);
+                    updateDisplay();
                 }
             }
         }
