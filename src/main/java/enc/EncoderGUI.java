@@ -83,6 +83,16 @@ public class EncoderGUI {
         filePanel = new ColoredPanel();
         centerPanel = new ColoredPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        JButton openButt = new JButton("Select a file");
+        openButt.addActionListener(new ChooseItemListener());
+        JPanel panel = new ColoredPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+        panel.add(Box.createHorizontalGlue());
+        panel.add(openButt);
+        panel.add(Box.createHorizontalGlue());
+        centerPanel.add(Box.createVerticalGlue());
+        centerPanel.add(panel);
+        centerPanel.add(Box.createVerticalGlue());
         fileChooser = new FileDialog(frame);
         jFile = new JFileChooser();
         filePanel.setLayout(new BoxLayout(filePanel, BoxLayout.Y_AXIS));
@@ -185,11 +195,15 @@ public class EncoderGUI {
         firstTime = true;
     }
 
+    /** Display a message indicating success of a task.
+     *  @param msg is the message to be displayed. */
     private void popup(String msg) {
         JOptionPane.showMessageDialog(null, msg, "Success!",
                                       JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /** Display an error, with message MSG.
+     *  @param msg is the error message to be displayed. */
     private void popupErr(String msg) {
         Toolkit.getDefaultToolkit().beep();
         JOptionPane.showMessageDialog(null, msg, "Error",
@@ -241,6 +255,10 @@ public class EncoderGUI {
         return status;
     }
 
+    /** Display the new relevant information on centerPanel.
+     *  creates a OpenFileTask thread that determines and sets FileType,
+     *  then uses FileType to call one of the fileType_____ methods.
+     */
     private void updateDisplay() {
         // Need some thread to handle appearance / disappearance of progBar
         centerPanel.removeAll();
@@ -294,6 +312,7 @@ public class EncoderGUI {
         saveItem.setEnabled(true);
     }
 
+    /** Turn a double into a number to the second decimal point. */
     private BigDecimal roundOff(double d) {
         return new BigDecimal(d).setScale(2, RoundingMode.HALF_UP);
     }
@@ -354,7 +373,11 @@ public class EncoderGUI {
     }
 
     /** Uses the Apache POI API to extract the text from a Microsoft Office file.
-     *  If currFile is not of any recognized Office format, will return null. */
+     *  If BSTREAM is not of any recognized Office format, will return null.
+     *  @param bStream is the bytes of the current file.
+     *  @return returns the text of an Office file, or null if the file
+     *          represented by bStream is not an Office file.
+     */
     private String officeDocText(ByteArrayInputStream bStream) {
         StringBuilder str = new StringBuilder();
         try {
@@ -565,7 +588,7 @@ public class EncoderGUI {
                     popupErr("Null file.");
                 } catch (IllegalArgumentException ill) {
                     popupErr("File not found.");
-                } catch (SecurityException sec) {
+                    } catch (SecurityException sec) {
                     popupErr("Do not have permission to read file.");
                 }
             }
