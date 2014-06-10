@@ -5,6 +5,7 @@
   </description>
   <property name="src" location="src/main"/>
   <property name="build" location="build"/>
+  <property name="target" location="target"/>
   <property name="dist" location="dist"/>
   <property name="key-alias" value="EncoderKey"/>
   <property name="store-pass" value="bibbles"/>
@@ -139,6 +140,7 @@
     <!-- Delete the ${build} and ${dist} directory trees, and dmg file -->
     <delete dir="${build}"/>
     <delete dir="${dist}"/>
+    <delete dir="${target}"/>
     <delete file="${volname}.dmg"/>
   </target>
 
