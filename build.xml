@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="Encoder" default = "bundle-app" basedir=".">
+<project name="Encoder" default = "run-jar" basedir=".">
   <description>
     Build file for EncoderGUI
   </description>
@@ -7,6 +7,7 @@
   <property name="build" location="build"/>
   <property name="target" location="target"/>
   <property name="dist" location="dist"/>
+  <property name="JRE_HOME" location="lib/jre1.8.0_05.jre/Contents/Home"/>
   <property name="key-alias" value="EncoderKey"/>
   <property name="store-pass" value="bibbles"/>
   <property name="Main-Class" value="enc.EncoderGUI"/>
@@ -95,7 +96,6 @@
             identifier="enc.EncoderGUI"
             mainclassname="enc.EncoderGUI"
             icon="${src}/resources/app_icon.icns">
-            <runtime dir="${env.JRE_HOME}"/>
             <classpath file="dist/lib/${volname}.jar" />
       </bundleapp>
   </target>
@@ -108,7 +108,7 @@
             identifier="enc.EncoderGUI"
             mainclassname="enc.EncoderGUI"
             icon="${src}/resources/app_icon.icns">
-            <runtime dir="${env.JRE_HOME}"/>
+            <runtime dir="${JRE_HOME}"/>
             <classpath file="dist/lib/${volname}.jar" />
       </bundleapp>
   </target>
@@ -137,7 +137,7 @@
 
   <target name="clean"
           description="removes all non-source directories">
-    <!-- Delete the ${build} and ${dist} directory trees, and dmg file -->
+    <!-- Delete all build and distribution files / directories -->
     <delete dir="${build}"/>
     <delete dir="${dist}"/>
     <delete dir="${target}"/>

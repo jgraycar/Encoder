@@ -4,13 +4,20 @@ It utilizes modular arithmetic to transform the bytes of a file by a random amou
 Compile and create jar/app/dmg by using either Apache Ant or Gradle.
 
 Ant Commands:
--    "ant jar" or just "ant" will create jar file in "dist/lib/Encoder-${DSTAMP}.jar" and
-     "dist/lib/Encoder.jar"
+-    "ant jar" will create jar file in "dist/lib/Encoder.jar"
 -    "ant compile" will create build directory and store *.classes there.
 -    "ant init" will simply create empty build directory.
--    "ant clean" will delete build and dist directories.
--    "ant bundle-app" will create the Encoder.app file.
+-    "ant clean" will delete all build and distribution directories.
+-    "ant bundle-app" will create the Encoder.app file WITHOUT JRE bundled in.
+-    "ant bundle-dist-app" will create the Encoder.app file with JRE bundled in.
 -    "ant dmg" will create the ENCODER disk image file.
+-    "ant run-jar" will create the executable jar file and run it.
+-    "ant run-app" will create the app file without the JRE and run it.
 
 To build using Gradle, simply substitute "gradle" for "ant" and use any of the same commands.
 
+The executable jar file can also be compiled with maven; "mvn package" will create two jars in the "target" directory, encoder-VER-jar-with-dependencies.jar and encoder-VER.jar. encoder-VER-jar-with-dependencies.jar will be executable, while encoder-VER.jar lacks all required third-party extensions.
+
+Known problems: 
+1. Cannot encrypt extra large files, since Java runs out of heap space.
+2. Opening music files is veeeery slow.
