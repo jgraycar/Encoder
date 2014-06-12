@@ -18,7 +18,7 @@ To build using Gradle, simply substitute "gradle" for "ant" and use any of the s
 
 The executable jar file can also be compiled with maven; "mvn package" will create two jars in the "target" directory, encoder-VER-jar-with-dependencies.jar and encoder-VER.jar. encoder-VER-jar-with-dependencies.jar will be executable, while encoder-VER.jar lacks all required third-party extensions.
 
-App logo (app_icon.icns) created by Visual Pharm - http://icons8.com
+All icons created by Visual Pharm - http://icons8.com
 
 Known problems: 
 1. Cannot encrypt extra large files, since Java runs out of heap space.
