@@ -426,7 +426,7 @@ public class EncoderGUI {
                 fileExt = nameParts[nameParts.length - 1];
                 img = ImageIO.read(new ByteArrayInputStream(realBytes));
                 try {
-                    fileText = new String(realBytes, "MacRoman");
+                    fileText = new String(realBytes, "Cp850");
                 } catch (UnsupportedEncodingException u) {
                     fileText = new String(realBytes, "UTF8");
                 }
