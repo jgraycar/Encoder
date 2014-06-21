@@ -454,6 +454,7 @@ public class EncoderGUI {
                                     progBar.setValue(75);
                                     fileType = "music";
                                 } catch (Exception e) {
+                                    e.printStackTrace(System.out);
                                     progBar.setValue(90);
                                     fileType = "unknown";
                                 }
