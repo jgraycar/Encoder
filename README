@@ -1,5 +1,4 @@
-Encoder is an encryption/decryption software package developed by Joel Graycar in 2014.
-It utilizes modular arithmetic to transform the bytes of a file by a random amount.
+Encoder is an encryption/decryption software package that utilizes modular arithmetic to transform the bytes of a file by a random amount.
 
 Compile and create jar/app/dmg by using either Apache Ant or Gradle.
 
