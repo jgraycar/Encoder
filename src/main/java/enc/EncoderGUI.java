@@ -13,12 +13,9 @@ import javax.imageio.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import javazoom.jlgui.basicplayer.BasicPlayer;
-import javazoom.jlgui.basicplayer.BasicController;
-import javazoom.jlgui.basicplayer.BasicPlayerException;
-
 import com.mpatric.mp3agic.Mp3File;
 import com.mpatric.mp3agic.ID3v2;
+import com.mpatric.mp3agic.ID3v1;
 import com.mpatric.mp3agic.UnsupportedTagException;
 import com.mpatric.mp3agic.InvalidDataException;
 
@@ -68,7 +65,6 @@ public class EncoderGUI {
     int state;
     BufferedImage img;
     boolean firstTime;
-    BasicController control;
 
     public static void main(String... args) {
         EncoderGUI gui = new EncoderGUI();
@@ -139,37 +135,6 @@ public class EncoderGUI {
         actionMenu.add(encryptItem);
         actionMenu.add(decryptItem);
         frame.setJMenuBar(menuBar);
-
-        // Set up music player
-        musicPanel = new ColoredPanel();
-        BasicPlayer player = new BasicPlayer();
-        control = (BasicController) player;
-        musicPanel.setLayout(new BoxLayout(musicPanel, BoxLayout.X_AXIS));
-        try {
-            BufferedImage playIcon =
-                ImageIO.read(EncoderGUI.class.getResource("/play.png"));
-            BufferedImage pauseIcon =
-                ImageIO.read(EncoderGUI.class.getResource("/pause.png"));
-            playButt = new RoundButton(new ImageIcon(playIcon));
-            pauseButt = new RoundButton(new ImageIcon(pauseIcon));
-            playButt.setBorder(BorderFactory.createEmptyBorder());
-            pauseButt.setBorder(BorderFactory.createEmptyBorder());
-            playButt.setContentAreaFilled(false);
-            pauseButt.setContentAreaFilled(false);
-            playButt.setSize(50, 50);
-            pauseButt.setSize(50, 50);
-        } catch (IOException io) {
-            playButt = new JButton("Play");
-            pauseButt = new JButton("Pause");
-        }
-        playButt.addActionListener(new PlayButtonListener());
-        pauseButt.addActionListener(new PauseButtonListener());
-        playButt.setOpaque(true);
-        pauseButt.setOpaque(true);
-        playButt.setBackground(bckgrndClr);
-        pauseButt.setBackground(bckgrndClr);
-        musicPanel.add(playButt);
-        musicPanel.add(pauseButt);
 
         // Set up text field
         fileTextArea = new JTextArea(45, 50);
@@ -264,9 +229,6 @@ public class EncoderGUI {
         centerPanel.removeAll();
         centerPanel.revalidate();
         centerPanel.repaint();
-        try {
-            control.stop();
-        } catch (BasicPlayerException b) {}
         progBar.setValue(0);
         OpenFileTask task = new OpenFileTask(fileBytes);
         frame.getRootPane().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
@@ -342,6 +304,8 @@ public class EncoderGUI {
     }
 
     private void fileTypeMusicFile() {
+        String artist, title, album;
+        artist = title = album = "";
         try {
             Mp3File mp3 = new Mp3File(currFile.getAbsolutePath());
             if (mp3.hasId3v2Tag()) {
@@ -355,16 +319,23 @@ public class EncoderGUI {
                     centerPanel.add(Box.createVerticalGlue());
                     centerPanel.add(imgLabel);
                 }
+                artist = tag.getArtist();
+                title = tag.getTitle();
+                album = tag.getAlbum();
+            } else if (mp3.hasId3v1Tag()) {
+                ID3v1 tag = mp3.getId3v2Tag();
+                artist = tag.getArtist();
+                title = tag.getTitle();
+                album = tag.getAlbum();
             }
         } catch (Exception e) {}
-        centerPanel.add(musicPanel);
+        JLabel artistLabel = new JLabel("Artist: " + artist);
+        JLabel albumLabel = new JLabel("Album: " + album);
+        JLabel titleLabel = new JLabel("Title: " + title);
+        centerPanel.add(artistLabel);
+        centerPanel.add(albumLabel);
+        centerPanel.add(titleLabel);
         centerPanel.add(Box.createVerticalGlue());
-        try {
-            control.play();
-            control.setGain(1);
-        } catch (BasicPlayerException err) {
-            popupErr("Error: could not play music file.");
-        }
     }
 
     private void fileTypeUnknown() {
@@ -450,7 +421,7 @@ public class EncoderGUI {
                             progBar.setValue(35);
                             if (fileExt.equals("mp3")) {
                                 try {
-                                    control.open(currFile);
+                                    Mp3File musicFile = new Mp3File(currFile.getAbsolutePath());
                                     progBar.setValue(75);
                                     fileType = "music";
                                 } catch (Exception e) {
@@ -592,26 +563,6 @@ public class EncoderGUI {
                     } catch (SecurityException sec) {
                     popupErr("Do not have permission to read file.");
                 }
-            }
-        }
-    }
-
-    class PlayButtonListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            try {
-                control.resume();
-            } catch (BasicPlayerException p) {
-                p.printStackTrace();
-            }
-        }
-    }
-
-    class PauseButtonListener implements ActionListener {
-        public void actionPerformed(ActionEvent event) {
-            try {
-                control.pause();
-            } catch (BasicPlayerException p) {
-                p.printStackTrace();
             }
         }
     }

@@ -134,13 +134,6 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <!-- Maybe need to use jl from lib locally -->
-      <groupId>javazoom</groupId>
-      <artifactId>jlayer</artifactId>
-      <version>1.0.1</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>com.googlecode.soundlibs</groupId>
       <artifactId>tritonus-share</artifactId>
       <version>0.3.7-2</version>
@@ -150,24 +143,6 @@
       <groupId>com.googlecode.soundlibs</groupId>
       <artifactId>jorbis</artifactId>
       <version>0.0.17-2</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.googlecode.soundlibs</groupId>
-      <artifactId>mp3spi</artifactId>
-      <version>1.9.5-1</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.googlecode.soundlibs</groupId>
-      <artifactId>vorbisspi</artifactId>
-      <version>1.0.3-1</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>local.javazoom</groupId>
-      <artifactId>basicplayer</artifactId>
-      <version>3.0</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
